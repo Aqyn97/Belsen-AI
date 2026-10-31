@@ -1,0 +1,35 @@
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Java and Maven outputs
+target/
+*.class
+*.jar
+*.war
+# Preserve a Maven Wrapper JAR if a later approved setup needs one.
+!.mvn/wrapper/maven-wrapper.jar
+
+# Frontend dependencies and generated output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+playwright-report/
+test-results/
+
+# Local runtime data
+*.log
+logs/
+.postgres-data/
+
+# Editor and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

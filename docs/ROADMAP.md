@@ -1,0 +1,109 @@
+# Seven-day roadmap
+
+Target MVP date: **November 6, 2026**, using the project owner's Asia/Almaty calendar. This is an ambitious plan, not completed work. Application implementation has not started.
+
+Each day has one main work package. Integrate small frontend slices from Day 2 onward so Day 6 is not the first time the browser meets the API. Review actual evidence before marking criteria complete.
+
+| Day | Date | Main work package | Status |
+| --- | --- | --- | --- |
+| 1 | October 31 | Architecture and documentation foundation | Documentation prepared; owner review pending |
+| 2 | November 1 | Runtime and authentication | Planned |
+| 3 | November 2 | Goals and tasks | Planned |
+| 4 | November 3 | Habits | Planned |
+| 5 | November 4 | Analytics | Planned |
+| 6 | November 5 | Frontend integration | Planned |
+| 7 | November 6 | AI coaching and release | Planned |
+
+## Day 1: architecture and foundation
+
+Acceptance criteria:
+
+- The owner-approved architecture and refinements are recorded consistently.
+- Exactly the ten approved foundation files are prepared, with accurate status labels and no application scaffolding.
+- Reporting formulas, history boundaries, security decisions and deployment shape are documented.
+- File scope, whitespace, documentation consistency and secret placeholders are reviewed.
+- The owner reviews the files; Git staging, commit and push remain under manual control.
+
+Dependency: owner review of the resulting documentation. Architecture approval alone does not mark the foundation review complete.
+
+## Day 2: runtime and authentication
+
+Acceptance criteria:
+
+- Java 21/Maven and React/TypeScript scaffolding use verified compatible versions and reproducible tooling.
+- Local PostgreSQL starts through Compose; Flyway creates the initial schema.
+- Email/password registration, login, logout and profile timezone work through secure sessions.
+- Google login works with configured credentials; identity collisions cannot silently link accounts.
+- Authentication, CSRF and unauthorized-access tests pass; initial CI runs the checks that exist.
+- A minimal browser account flow communicates with the backend.
+
+Dependencies: approved implementation scope, Java/Node/Docker availability and Google client credentials. Verify production callback requirements early.
+
+## Day 3: goals and tasks
+
+Acceptance criteria:
+
+- Users can create/edit/archive goals, set weekly targets and record explicit progress.
+- Users can create/edit/archive tasks, set optional duration, associate owned goals and complete/reopen/reschedule tasks.
+- Original due dates are preserved; current state and required events update atomically.
+- Ownership and cross-user reference tests pass; invalid targets/durations are rejected.
+- A small frontend slice demonstrates goal and task operations against real data.
+
+Dependency: working authentication and migrations. Avoid expanding history into a general event-sourcing system.
+
+## Day 4: habits
+
+Acceptance criteria:
+
+- Users can create/edit habits, select weekdays and record eligible daily completion.
+- Rest days and future days cannot be falsely completed.
+- Schedule edits/deactivation preserve elapsed obligations and follow the effective-date rule.
+- Unique occurrences prevent duplicate daily records.
+- Schedule, timezone, ownership and completion tests pass; a browser slice shows daily habits.
+
+Dependency: authenticated users with reporting timezones. Occurrence reconstruction must work even when users skip opening the app for several days.
+
+## Day 5: analytics
+
+Acceptance criteria:
+
+- Task metrics use original due dates and completion state at cutoff in every response.
+- Habit metrics count fully completed eligible days, excluding rest days.
+- Weekly goal metrics use explicit weekly targets, preserve actual units and cap percentages at 100%.
+- Zero denominators return no-data states; counts and report timezone are visible.
+- Closed-week snapshots remain stable after later activity and archiving.
+- Tests cover cutoff boundaries, reopened/rescheduled tasks, schedule changes and daylight-saving behavior.
+
+Dependencies: goals, tasks and habits with the required history. This is a correctness gate, not merely a dashboard styling task.
+
+## Day 6: frontend integration
+
+Acceptance criteria:
+
+- Core account, goals, tasks, habits and weekly-summary journeys work against the backend.
+- Responsive layouts use the approved yellow identity and readable contrast.
+- Forms have labels, keyboard access, visible focus and useful validation errors.
+- Loading, failure and empty states are present; planned features are not represented by fake data.
+- Frontend type checking, linting, tests and production build pass; browser smoke checks cover the main journeys.
+- React assets can be served by Spring Boot without swallowing API errors in SPA fallback.
+
+Dependencies: stable enough API contracts and incremental browser integration from earlier days. Resolve deployment packaging now, not at the end of Day 7.
+
+## Day 7: coaching and release
+
+Acceptance criteria:
+
+- “Analyze my progress” uses a backend provider adapter and stored progress summaries.
+- Output is validated, limited to three suggestions and visibly separate from verified metrics.
+- Quotas, timeouts, invalid output and provider failures have tested behavior; AI cannot mutate user data.
+- A public HTTPS origin serves the frontend and API with persistent PostgreSQL and sessions.
+- Production OAuth redirects, cookie settings, migrations, backup configuration and secret handling are checked.
+- CI passes and critical end-to-end smoke checks succeed; actual results and remaining limitations are recorded.
+
+Dependencies: provider/model choice, funded usage limit, hosting access, production Google configuration and release-ready core features.
+
+## Release risks and response
+
+The largest risks are analytics edge cases, OAuth configuration, provider access, deployment constraints and too much integration work arriving late. Obtain credentials and hosting access early. Keep visual polish small, use focused work packages and resolve integration failures as they appear.
+
+All approved MVP areas remain release targets. Do not silently drop Google sign-in or coaching and call the full MVP complete. If acceptance criteria cannot be met by November 6, record the gap and request an explicit scope/date decision. Security, ownership checks and correct reporting are release gates.
