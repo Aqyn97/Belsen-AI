@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: belsen-ai
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      connection-timeout: 10000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    clean-disabled: true
+  session:
+    timeout: ${BELSEN_SESSION_TIMEOUT:30m}
+    jdbc:
+      initialize-schema: never
+server:
+  port: ${BELSEN_SERVER_PORT:8081}
+  servlet:
+    session:
+      cookie:
+        name: BELSEN_SESSION
+        http-only: true
+        secure: true
+        same-site: lax
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+belsen:
+  google:
+    enabled: ${BELSEN_GOOGLE_ENABLED:false}
+    client-id: ${BELSEN_GOOGLE_CLIENT_ID:}
+    client-secret: ${BELSEN_GOOGLE_CLIENT_SECRET:}

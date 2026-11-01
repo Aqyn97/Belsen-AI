@@ -1,6 +1,6 @@
 # Architecture
 
-Status: approved design, not implemented. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Other modules and the frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -38,7 +38,7 @@ The proposed baseline is Java 21, Spring Boot 4.1.2, React 19.3 and PostgreSQL 1
 
 Before scaffolding, recheck support and pin compatible Maven, Vite, TypeScript, Node and test-tool versions. Use Maven Wrapper and a frontend lockfile. PostgreSQL development and test versions should match production's major version.
 
-Version references checked during the architecture review: [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html), [React versions](https://react.dev/versions), [Vite requirements](https://vite.dev/guide/) and [PostgreSQL support policy](https://www.postgresql.org/support/versioning/). No dependencies are installed in the foundation stage.
+Version references checked during the architecture review: [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html), [React versions](https://react.dev/versions), [Vite requirements](https://vite.dev/guide/) and [PostgreSQL support policy](https://www.postgresql.org/support/versioning/). Backend dependencies are managed by the Spring Boot parent; frontend dependencies are not installed.
 
 ## Data model
 
@@ -175,7 +175,7 @@ The provider has no tools or write access. Keep keys server-side. Provider timeo
 - Frontend tests: forms, API errors, loading/empty states, accessibility and verified-metric/coaching separation.
 - End-to-end tests: account flow, goal progress, task reschedule/reopen, habit rest days and stable closed-week results. Exercise Google configuration manually in a controlled smoke test rather than relying on a live provider in ordinary CI.
 
-Future GitHub Actions gates: Maven verification, frontend type checking, linting, tests and production build. Prioritize meaningful edge cases over an arbitrary coverage target. None of these checks exists or has passed in the foundation stage.
+Future GitHub Actions gates: Maven verification, frontend type checking, linting, tests and production build. Prioritize meaningful edge cases over an arbitrary coverage target. Backend verification exists, including Stage C authentication, cookie and mock OIDC tests; the Stage B baseline passed 20 tests. Frontend and CI checks remain planned.
 
 ## Migration and deployment
 
@@ -191,7 +191,7 @@ Register exact local and production OAuth callbacks, with the production callbac
 
 ## Planned repository layout
 
-Only the ten foundation files exist on Day 1. The directories below are a future implementation plan.
+Day 1 created ten documentation/configuration files. Backend and Compose now exist; frontend and CI paths below remain a future implementation plan.
 
 ```text
 backend/
@@ -211,3 +211,17 @@ docs/
 ```
 
 Backend packages contain their own controllers, services, DTOs, repositories and entities as needed. Frontend features group user journeys; shared components hold reusable accessible UI. Infrastructure contains local runtime configuration; documentation records rules and decisions.
+
+## Stage C implementation notes
+
+The six authentication/profile API routes above are implemented. Other product APIs remain proposed. `AccountService` owns account transactions; controllers validate DTOs and call services. Profile IDs come only from the authenticated principal. Jackson rejects unknown fields. No new migrations were needed: V1/V2 remain unchanged.
+
+Following [Spring Security session persistence guidance](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html), custom JSON authentication applies session-fixation and CSRF strategies, then explicitly saves the security context through `HttpSessionSecurityContextRepository`. The session principal contains the local UUID, not a JPA entity or password hash. Fetch a new CSRF token after authentication. Logout uses Spring Security to invalidate the JDBC session, clear authentication and expire the cookie. Request caching is disabled for API failures.
+
+Google configuration is conditional (`BELSEN_GOOGLE_ENABLED`); enabled configuration requires `BELSEN_GOOGLE_CLIENT_ID` and `BELSEN_GOOGLE_CLIENT_SECRET`. Spring Security validates OIDC tokens before `GoogleAccountService` maps the provider subject. Returning subjects reuse the same local account even if the provider email changes. New identities require verified email and cannot merge with an existing email. Concurrent uniqueness conflicts fail safely; the user can retry. Google accounts initially use UTC. No account-linking route exists.
+
+All other private routes remain denied by default. CSRF is enabled, including login/registration/logout. Passwords use delegating BCrypt with a 12-character registration minimum and 72-byte UTF-8 maximum. Unknown accounts and Google-only accounts perform a dummy password comparison before returning the same login error. Sessions expire after 30 minutes of inactivity by default.
+
+Throttling is bounded to 10,000 keys and fails closed at capacity: 10 attempts/email and 50 attempts/address per 15 minutes across registration/login, with no success reset. It is synchronized within one instance; restart resets counters. Multi-instance limits, trusted proxy configuration, email verification and recovery are deployment decisions, not implemented protections.
+
+Problem Details are shared by MVC and security filters. Validation responses expose field messages, never rejected values. Unexpected errors return a generic response and log only the request ID and exception class. Real Google sign-in remains unverified; see README for exact setup and CSRF usage.

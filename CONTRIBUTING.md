@@ -1,6 +1,6 @@
 # Contributing to Belsen-AI
 
-Belsen-AI is currently in the documentation foundation stage. Backend, frontend, database migrations, tests and CI will be introduced in later work packages.
+Belsen-AI is in Day 2 backend development. The backend foundation, migrations and PostgreSQL tests exist; Stage C adds authentication and profile support. Frontend and CI remain future work.
 
 ## Working process
 
@@ -27,6 +27,6 @@ Do not rewrite Git history or create a pull request without explicit permission.
 
 For documentation changes, check links, status claims, formulas and configuration examples. Run `git diff --check` for tracked changes; new untracked files need separate inspection because ordinary Git diffs omit them.
 
-Application checks will be documented when the corresponding build tools and tests exist. Planned gates are Maven verification, PostgreSQL integration tests, frontend type checking, linting, tests and a production build. Do not claim those checks passed before they have been executed successfully.
+Run `./backend/mvnw -f backend/pom.xml verify` for backend and PostgreSQL integration tests (Docker required). Frontend type checking, linting, tests and CI remain planned. Do not claim those checks passed before they have been executed successfully.
 
 Use conventional commit messages such as `docs: add Day 1 project foundation`. A suggested message is not authorization to commit.

@@ -2,9 +2,9 @@
 
 ## Scope and current state
 
-This repository is in the Day 1 documentation foundation stage. No backend, frontend, tests or deployment exists. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
+This repository is in Day 2 backend development. Stage B provides Spring Boot, PostgreSQL/Flyway, JDBC sessions, security and foundation tests. Stage C implements authentication, Google OIDC, profiles and security tests. Live Google browser login remains unverified. No frontend or deployment exists. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
 
-For the Day 1 foundation task, edit only `README.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig`, `.env.example`, `AGENTS.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and `docs/DECISIONS.md`. Do not scaffold applications or install dependencies. Later implementation requires a new authorized work package.
+The completed Day 1 foundation task was restricted to `README.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig`, `.env.example`, `AGENTS.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and `docs/DECISIONS.md`. Later implementation requires an authorized work package. Stage C does not authorize frontend or other product features.
 
 ## Manual Git control
 

@@ -1,13 +1,13 @@
 # Seven-day roadmap
 
-Target MVP date: **November 6, 2026**, using the project owner's Asia/Almaty calendar. This is an ambitious plan, not completed work. Application implementation has not started.
+Target MVP date: **November 6, 2026**, using the project owner's Asia/Almaty calendar. This is an ambitious plan, not completed work. The Stage B backend foundation is implemented; verification evidence is recorded below. Authentication and profile code are implemented; live Google browser verification remains pending.
 
-Each day has one main work package. Integrate small frontend slices from Day 2 onward so Day 6 is not the first time the browser meets the API. Review actual evidence before marking criteria complete.
+Each day has one main work package. Integrate small frontend slices from Day 3 onward so Day 6 is not the first time the browser meets the API. Review actual evidence before marking criteria complete.
 
 | Day | Date | Main work package | Status |
 | --- | --- | --- | --- |
-| 1 | October 31 | Architecture and documentation foundation | Documentation prepared; owner review pending |
-| 2 | November 1 | Runtime and authentication | Planned |
+| 1 | October 31 | Architecture and documentation foundation | Complete; owner confirmed |
+| 2 | November 1 | Runtime and authentication | Stage B/C implemented; live Google verification pending |
 | 3 | November 2 | Goals and tasks | Planned |
 | 4 | November 3 | Habits | Planned |
 | 5 | November 4 | Analytics | Planned |
@@ -24,20 +24,30 @@ Acceptance criteria:
 - File scope, whitespace, documentation consistency and secret placeholders are reviewed.
 - The owner reviews the files; Git staging, commit and push remain under manual control.
 
-Dependency: owner review of the resulting documentation. Architecture approval alone does not mark the foundation review complete.
+Owner review is complete, as confirmed in the Day 2 assignment.
 
 ## Day 2: runtime and authentication
 
 Acceptance criteria:
 
-- Java 21/Maven and React/TypeScript scaffolding use verified compatible versions and reproducible tooling.
+- Java 21/Spring Boot/Maven scaffolding uses verified compatible versions and reproducible tooling. Frontend scaffolding is deferred from the original Day 2 plan.
 - Local PostgreSQL starts through Compose; Flyway creates the initial schema.
 - Email/password registration, login, logout and profile timezone work through secure sessions.
 - Google login works with configured credentials; identity collisions cannot silently link accounts.
-- Authentication, CSRF and unauthorized-access tests pass; initial CI runs the checks that exist.
-- A minimal browser account flow communicates with the backend.
+- Authentication, CSRF and unauthorized-access tests pass. CI is deferred from this controlled Stage B scope.
+- Authentication behavior is verified through API/security tests; the browser account interface is deferred to frontend work.
 
 Dependencies: approved implementation scope, Java/Node/Docker availability and Google client credentials. Verify production callback requirements early.
+
+### Stage B checkpoint
+
+Implemented: Java 21/Spring Boot 4.1.2, Maven Wrapper 3.9.12, isolated PostgreSQL Compose configuration, identity/session migrations, Hibernate validation, minimal health endpoint and deny-by-default security. Verified November 1, 2026: Maven `verify` passed with 20 tests, zero failures/errors/skips. PostgreSQL connectivity, both migrations, Hibernate validation and JDBC session persistence passed. Live HTTP checks and a separate Compose + packaged-JAR smoke test confirmed health `200`, private GET `401` and missing-CSRF mutation `403`. The smoke-test resources were cleaned up.
+
+### Stage C checkpoint
+
+Implemented: registration, JSON login, CSRF bootstrap, logout, owned profile updates, timezone/input validation, JDBC security-context persistence, session rotation, bounded throttling and conditional Google OIDC. Status statements from the Day 1 foundation are corrected. No frontend or other product module was added.
+
+PostgreSQL and HTTP tests exercise password flows, cookies, profile ownership and a local signed-token OIDC provider. Verified November 1, 2026: Maven `verify` passed 51 tests (20 database-independent tests and 31 PostgreSQL integration tests), zero failures/errors/skips. Both migrations and Hibernate validation passed. A separate packaged-JAR + Compose HTTP smoke test passed registration, login, profile update, session continuity and logout invalidation; its resources were cleaned up. Real Google credentials and a successful browser flow are still needed to satisfy the live Google acceptance criterion. The full Day 2 package is not marked complete until that external verification is recorded.
 
 ## Day 3: goals and tasks
 
