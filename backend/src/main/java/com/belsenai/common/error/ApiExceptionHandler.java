@@ -62,6 +62,16 @@ public class ApiExceptionHandler {
                 "Account conflicts with an existing record.", request.getRequestURI()));
     }
 
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    ResponseEntity<ProblemDetail> stale(HttpServletRequest request) {
+        return ResponseEntity.status(409).body(problems.create(409,"Resource changed. Reload and retry.",request.getRequestURI()));
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ProblemDetail> invalidParameter(HttpServletRequest request) {
+        return ResponseEntity.badRequest().body(problems.create(400,"Invalid path or query parameter.",request.getRequestURI()));
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ProblemDetail> unexpected(Exception exception, HttpServletRequest request) {
         ProblemDetail problem = problems.create(500, "An unexpected server error occurred.", request.getRequestURI());

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Other modules and the frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habits, analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -225,3 +225,37 @@ All other private routes remain denied by default. CSRF is enabled, including lo
 Throttling is bounded to 10,000 keys and fails closed at capacity: 10 attempts/email and 50 attempts/address per 15 minutes across registration/login, with no success reset. It is synchronized within one instance; restart resets counters. Multi-instance limits, trusted proxy configuration, email verification and recovery are deployment decisions, not implemented protections.
 
 Problem Details are shared by MVC and security filters. Validation responses expose field messages, never rejected values. Unexpected errors return a generic response and log only the request ID and exception class. Real Google sign-in remains unverified; see README for exact setup and CSRF usage.
+
+## Day 3 goals implementation
+
+V3 adds `goals`, `goal_progress_entries`, `goal_weekly_plans` and the narrow `reporting_weeks` calendar table. V1/V2 are unchanged. Calendar rows are unique by owner/Monday, contain an IANA timezone and stored UTC boundaries, and are never updated through the API. Plans and progress use composite foreign keys to enforce the same owner as their goal and calendar week. PostgreSQL also enforces positive numeric values, one plan per goal/week and one submission UUID per goal.
+
+First progress or plan write reserves the current week even if it contains no progress; a future plan additionally reserves its future week. Active stored intervals take precedence over the current profile timezone. New rows use timezone-aware boundaries, clamped against adjacent reservations to avoid overlap. A profile timezone change never alters an existing row. A westward transition may leave the current profile date in a frozen, closed week; changes return `409` until the next eligible week. This is explicit fail-closed behavior, not a scheduler or historical recalculation.
+
+Write transactions lock the account row first and then the owner-scoped goal row. This gives calendar first writes, archive/progress races and duplicate submissions one consistent lock order. The account lock serializes goal writes within one account; this favors a small, understandable MVP over maximum throughput. Goal/plan `@Version` fields and expected-version requests reject stale edits. Other accounts remain independent.
+
+Progress is append-only except the explicit `voided_at` audit marker. Void and replacement are separate transactions: a failed replacement leaves the visible original voided, never silently restores or rewrites it. Closed weeks and archived goals reject correction. Submission retries compare quantity by numeric value and effective date under the parent lock; an identical retry returns the existing entry even after closure/archive/void, and conflicting reuse returns `409`. PostgreSQL uniqueness remains the final safeguard.
+
+Goal GET/list responses provide lifetime totals and a separate weekly-plan collection with raw planned/completed units, percentage, version and frozen calendar metadata. Calculations are authoritative Java/BigDecimal values; only displayed percentages round. Collection ordering is creation time then UUID, with bounded page sizes. PATCH distinguishes omitted optional metadata from explicit null. Goal target updates do not rewrite weekly plans; unit changes are rejected once any progress or plan exists.
+
+At the goals-stage checkpoint, no task tables, analytics snapshots, frontend or dependency were added. Tasks are introduced by Stage C below. See README for goal request contracts.
+
+## Day 3 task implementation
+
+V4 adds `tasks` and `task_events`. V1–V3 remain unchanged. Task owner/date and goal indexes support lists and future reporting. Composite task→goal and task/event→reporting-week foreign keys enforce ownership in PostgreSQL. State checks enforce completion timestamps, positive duration, and an original reporting week whenever an original due date exists.
+
+Task writes follow the existing account-first lock order, then lock the owned task. Active goal association is validated through GoalService under that same account lock, coordinating safely with goal archive. Optimistic versions are checked before no-op decisions. Every actual change advances a per-task event sequence, so fixed-clock/equal-timestamp changes still increment the task version. No-op matching-version transitions emit no event; stale repeats return `409`.
+
+A creation event captures the initial undated state; a dated creation additionally records DUE_ASSIGNED. Further events are RESCHEDULED, COMPLETED, REOPENED, ARCHIVED and metadata UPDATED. Each snapshot preserves completion/archive status, original/current due dates and original/event reporting-week references. Sequence is unique per task and breaks timestamp ties. Events expose no update/delete repository methods, use Hibernate immutable mappings and have a PostgreSQL trigger rejecting UPDATE/DELETE. All task state and event changes use one transaction; event failure rolls back even a flushed task UPDATE.
+
+The original reporting cohort is frozen on first due assignment through ReportingCalendar. First assignment to a closed week fails; later planning-date changes preserve the cohort. Each operation uses the existing current calendar; `openAt` is a small extension accepting the captured event instant, while the old `open` behavior remains unchanged. Completion/archive timestamps equal event timestamps. Crossing a reporting boundary before capture returns a conflict rather than mixing calendar contexts. Cutoff reconstruction selects the last applicable event before the cutoff, using sequence to order ties. A later reopen/archive cannot change that earlier state. No analytics service is implemented.
+
+Task state is OPEN or COMPLETED with a separate archive timestamp, preserving whether an archived task was complete. Reads are owner-scoped; lists default to non-archived tasks and fixed creation-time/UUID ordering. Mutation DTOs never accept ownership or internal state. Security authorizes only the implemented task methods/paths. There is no task-history HTTP API or goal-progress side effect. API contracts and filters are in README.
+
+### Goal operation time and read snapshots
+
+Goal recording, voiding and weekly planning capture one acceptance instant after acquiring the account and goal locks. That instant selects the frozen reporting week, validates eligibility and local dates, and stamps the entry, plan and goal. Persistence may finish after a boundary without changing the logical acceptance time. An operation accepted exactly at a week's exclusive end cannot modify that closed week. Identical submission retries still return the original entry before calendar eligibility checks.
+
+Standalone GoalService get/list calls use read-only PostgreSQL REPEATABLE READ transactions through the Spring service proxy. REQUIRES_NEW prevents an enclosing READ COMMITTED transaction from silently overriding this guarantee; an enclosing transaction is suspended, so these reads intentionally cannot see its uncommitted changes and may require another pooled connection. Each response uses one snapshot, not necessarily the newest concurrent commit. Private view assembly does not rely on self-invoked transactional annotations. Other service calls retain their existing isolation.
+
+Write methods returning goal views retain READ COMMITTED: update/archive hold the account and goal locks through view assembly, preventing concurrent goal progress/plan mutations; create returns a newly inserted goal invisible to other transactions until commit. These guarantees assume all application goal writers preserve the account-first locking protocol. Direct SQL writers bypassing it are outside this coordination contract.

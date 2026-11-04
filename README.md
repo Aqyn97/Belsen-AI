@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 2 backend.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
+**Day 3 backend, goals and tasks.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
 
 | Area | Status |
 | --- | --- |
@@ -16,8 +16,8 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Backend configuration, migrations and health | Implemented; verification results below |
 | Email/password, sessions and profiles | Implemented; PostgreSQL/HTTP tests |
 | Google OIDC | Implemented; mock-provider tests; live verification pending |
-| Goals and progress tracking | Planned |
-| Tasks and reporting history | Planned |
+| Goals, progress entries and weekly targets | Implemented; goals-stage verification below |
+| Tasks and append-only history | Implemented; task-stage verification below |
 | Habits and consistency tracking | Planned |
 | Weekly analytics | Planned |
 | AI coaching | Planned |
@@ -107,11 +107,62 @@ Setup reference: [Google OpenID Connect documentation](https://developers.google
 
 Automated tests use a local mock provider, signed ID tokens and PostgreSQL. They verify state, nonce/signature rejection, account mapping and sessions without contacting Google. **A real Google browser login has not been run.** No account linking is implemented: an existing email with a different sign-in identity is rejected. New Google accounts start in `UTC`; update the profile afterward.
 
+## Goals API (Day 3, Stage B)
+
+All routes below require the session cookie. Mutations also require a valid CSRF token. Owner IDs are never accepted. Another account's goal or progress entry returns `404`.
+
+| Method and route | Contract |
+| --- | --- |
+| `POST /api/v1/goals` | `title`, optional `description`, positive `target`, `unit`, optional `startDate`/`deadline`; returns `201` |
+| `GET /api/v1/goals?page=0&size=20` | Stable paginated list, size 1–100 |
+| `GET /api/v1/goals/{id}` | Metadata, version, lifetime units/percentage and separate weekly-plan results |
+| `PATCH /api/v1/goals/{id}` | Required `version` plus changed metadata; omission preserves values, explicit null clears description/startDate/deadline only |
+| `POST /api/v1/goals/{id}/archive` | Body contains expected `version` |
+| `POST /api/v1/goals/{id}/progress` | `submissionId` UUID, positive `quantity`, `effectiveDate`; new entry `201`, identical retry `200`, conflicting reuse `409` |
+| `GET /api/v1/goals/{id}/progress` | Paginated history including voided entries and frozen reporting-week metadata |
+| `POST /api/v1/goals/{id}/progress/{entryId}/void` | Void an open-week entry without deleting it; replacement is a separate submission |
+| `PUT /api/v1/goals/{id}/weekly-plans/{weekStart}` | Positive `plannedUnits`; omit version on creation, supply the current plan version for future-week updates |
+
+Quantities use `NUMERIC(19,4)`/BigDecimal; invalid precision is rejected, not rounded. Percentages alone are rounded to one decimal and capped at 100. Lifetime progress divides all unvoided units by the total goal target. Each weekly result divides only that week's units by its own weekly target. No weekly plan is represented by an empty list, not an invented percentage.
+
+The first progress or weekly-plan write freezes the account's current reporting week, even with no progress. Future plans freeze their own weeks too. Stored timezone and instant boundaries survive profile timezone changes; started plans cannot be edited, and closed-week progress cannot be added or voided. A timezone transition can shorten an unreserved adjacent week's window to avoid overlap. If a westward timezone change still labels the current local date as an already-closed week, writes return `409` until the next eligible local week rather than reopening history. Reads remain available.
+
+Archived goals retain history but reject changes. Identical progress retries still return their original entry, including its void state. Units cannot change after entries or plans exist; changing the lifetime target recalculates only the lifetime percentage. Stale versions return `409`.
+
+**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks are now implemented in Stage C; habits, dashboards, AI and frontend remain unimplemented.
+
+## Tasks API (Day 3, Stage C)
+
+Task requests require the existing authenticated session. Mutations require CSRF. No owner field is accepted, and foreign task IDs or linked goal IDs return `404`.
+
+| Method and route | Request/behavior |
+| --- | --- |
+| `POST /api/v1/tasks` | Required `title`; optional `description`, `goalId`, `dueDate`, `estimatedDurationMinutes`; returns `201` |
+| `GET /api/v1/tasks` | Bounded pagination and owned-task filters |
+| `GET /api/v1/tasks/{id}` | Current task, audit timestamps, version, event sequence and original reporting-week context |
+| `PATCH /api/v1/tasks/{id}` | Required `version`; optional metadata fields. Omission preserves values; explicit null clears description/goal/duration. Dates and status use actions |
+| `POST /api/v1/tasks/{id}/complete` | Body `{"version": N}` |
+| `POST /api/v1/tasks/{id}/reopen` | Body `{"version": N}` |
+| `POST /api/v1/tasks/{id}/archive` | Body `{"version": N}` |
+| `POST /api/v1/tasks/{id}/reschedule` | Required `version` and `dueDate`; explicit `null` removes the current date |
+
+Use returned versions; do not assume a newly created dated task has version zero. A stale version always returns `409`, even if the requested state already matches. A repeat using the current version is a no-op with no extra event. Archived tasks retain OPEN/COMPLETED state and completion timestamp; only a matching-version repeat archive is allowed. Reopen a completed task before rescheduling.
+
+Titles are 1–200 nonblank characters, descriptions at most 2,000, and optional duration 1–1,440 minutes. Linking requires an active owned goal. Archiving a goal does not archive existing tasks, and task completion never adds goal units.
+
+List filters: `page` (default 0), `size` (1–100, default 20), `status=OPEN|COMPLETED`, `archived=true|false` (default false), `goalId`, and either exact `dueDate` or inclusive `from`/`to`. Date filters use the current due date. Ordering is creation instant then UUID. There is no task-event HTTP endpoint yet.
+
+Undated tasks enter a reporting cohort on first scheduling. That original due date and frozen week never change, even if the current date is later removed. First assignment into a closed week is rejected. Subsequent rescheduling can change the planning date without moving the original reporting cohort. Completion/reopening/archive are recorded at the actual operation time; none backdate or rewrite closed history.
+
+Events are stored transactionally with task state, have per-task sequence numbers, and retain state after each action. PostgreSQL rejects event UPDATE/DELETE. Completion/archive timestamps match their event timestamp. If an operation crosses its frozen calendar boundary before recording, it fails with `409` for retry instead of storing mixed-week context. Analytics calculations and event-history screens are not implemented.
+
+**Verified November 2, 2026:** full Maven `verify` passed 109 tests, zero failures/errors/skips: all 83 previous cases plus 23 PostgreSQL/HTTP task tests and 3 task validation tests. Flyway V1–V4 and Hibernate validation passed.
+
 ## Current limitations
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-No frontend, account linking, password reset, email verification, product modules, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
+No frontend, account linking, password reset, email verification, habits, analytics, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
 
 ## Documentation
 

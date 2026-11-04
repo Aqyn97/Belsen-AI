@@ -51,7 +51,11 @@ public class SecurityConfig {
             authorize
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                .requestMatchers("/api/v1/me").authenticated();
+                .requestMatchers("/api/v1/me", "/api/v1/goals", "/api/v1/goals/**").authenticated();
+            authorize.requestMatchers(HttpMethod.GET,"/api/v1/tasks","/api/v1/tasks/{id}").authenticated();
+            authorize.requestMatchers(HttpMethod.POST,"/api/v1/tasks","/api/v1/tasks/{id}/complete",
+                    "/api/v1/tasks/{id}/reopen","/api/v1/tasks/{id}/reschedule","/api/v1/tasks/{id}/archive").authenticated();
+            authorize.requestMatchers(HttpMethod.PATCH,"/api/v1/tasks/{id}").authenticated();
             if (googleEnabled) {
                 authorize.requestMatchers("/oauth2/authorization/google", "/login/oauth2/code/google").permitAll();
             }

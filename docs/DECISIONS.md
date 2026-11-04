@@ -107,3 +107,29 @@ The original 20 foundation cases are retained. Two MVC cases now assert denial o
 | Password recovery, email verification and public registration policy | Before unrestricted public launch | Not currently in approved MVP scope; document and resolve launch limitations |
 
 The owner retains manual staging, commit and push control. Resolving an open technical choice does not authorize Git publication or work outside the agreed package.
+
+## D14: frozen reporting-week calendar and goal transactions
+
+**Authorized by Day 3 Stage B approval.** Add immutable per-account/Monday reporting-week rows to V3 alongside the three goal tables. First progress/plan writes reserve the current week; future planning reserves a future week without requiring progress. Store timezone and UTC bounds instead of deriving history from the latest profile timezone. Adjacent new intervals are shortened if needed to avoid overlap. An already-closed week never reopens after a timezone change; transient westward-boundary conflicts return `409`. Frozen reporting records are preserved without implementing analytics.
+
+Use positive `NUMERIC(19,4)` values and Bean Validation rejecting excess scale/precision. Void entries rather than deleting them; corrections submit a new UUID after voiding. Lifetime and weekly percentages are separate. Metadata PATCH preserves omissions and clears only nullable fields when explicitly null.
+
+Serialize writes through account-then-goal row locks. This protects calendar initialization, idempotency and archiving. Use `@Version` plus expected versions for goal metadata and future weekly-plan edits. New progress retries return the original record without double counting; conflicting reuse returns `409`. Unique keys and composite ownership foreign keys enforce invariants in PostgreSQL as well as services.
+
+The tradeoffs are serialized writes per account, separate void/replacement actions and bounded paginated lists that still calculate totals per goal. Optimize only after actual workload evidence. No auth behavior or new infrastructure is introduced.
+
+## D15: task state and append-only historical snapshots
+
+**Authorized by Day 3 Stage C.** Keep OPEN/COMPLETED state plus a separate archive timestamp. Require an expected version for every mutation, checking it before idempotent no-op decisions. A matching-version repeat of complete/reopen/archive does not change the version or add history; a stale repeat returns `409`.
+
+Use account-first locking from the goals calendar, then an owned task lock. Validate goal links through GoalService; the shared owner lock coordinates with goal archiving. Same-owner composite foreign keys are the database safeguard. No task operation writes goal progress.
+
+Use a per-task sequence in addition to UTC event time. Store the resulting status, completion/archive timestamps, due dates and reporting contexts; do not create an event-sourcing framework. Metadata updates also leave an UPDATED marker. Task state and event insertion share a transaction. PostgreSQL rejects event mutation, and the application exposes no deletion or event-update API. The tradeoff is intentionally retaining history, not supporting hard deletion in this MVP.
+
+Reuse the existing calendar for first due assignment and event context. Preserve original due date/week after rescheduling or removing the current date. The Calendar `openAt` addition validates the captured event instant without changing goal semantics. Completion/archive and their event use the same instant; a crossed boundary causes a safe retry conflict. No analytics calculations or task-history interface are added.
+
+## D16: consistent goal acceptance time and response snapshots
+
+Goal progress recording, voiding and weekly planning use one post-lock acceptance instant for calendar selection, validation and all mutation timestamps. Finishing persistence after a boundary does not invalidate a mutation accepted before it. Exclusive end boundaries and frozen timezones remain enforced.
+
+Standalone goal get/list reads use read-only REPEATABLE READ with REQUIRES_NEW through the Spring proxy, ensuring lifetime and weekly aggregates share a snapshot even when a writer commits between queries. The tradeoffs are snapshot freshness and a separate connection when an outer transaction is suspended; uncommitted outer writes are not visible. Write responses retain existing account-level serialization rather than raising write isolation. No authentication, task behavior, schema or infrastructure changes are required.

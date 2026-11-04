@@ -8,7 +8,7 @@ Each day has one main work package. Integrate small frontend slices from Day 3 o
 | --- | --- | --- | --- |
 | 1 | October 31 | Architecture and documentation foundation | Complete; owner confirmed |
 | 2 | November 1 | Runtime and authentication | Stage B/C implemented; live Google verification pending |
-| 3 | November 2 | Goals and tasks | Planned |
+| 3 | November 2 | Goals and tasks | Backend implemented; final owner review pending |
 | 4 | November 3 | Habits | Planned |
 | 5 | November 4 | Analytics | Planned |
 | 6 | November 5 | Frontend integration | Planned |
@@ -60,6 +60,14 @@ Acceptance criteria:
 - A small frontend slice demonstrates goal and task operations against real data.
 
 Dependency: working authentication and migrations. Avoid expanding history into a general event-sourcing system.
+
+### Day 3 Stage B checkpoint
+
+Goals, lifetime progress, weekly plans, frozen reporting calendar, auditable voids, idempotent submissions and ownership checks are implemented. Verified November 2, 2026: full Maven verification passed 83 tests, zero failures/errors/skips, including all 58 existing cases, 4 goal-rule tests and 21 goals integration tests. Flyway V1–V3 and Hibernate validation passed. At the Stage B checkpoint, tasks still required separate Stage C approval; the Stage C result is below.
+
+### Day 3 Stage C checkpoint
+
+Task CRUD/actions, owned active goal links, stable filtered lists, optimistic conflict handling and append-only ordered events are implemented. Reporting uses the Stage B frozen calendar. New tests cover transactional rollback after a flushed UPDATE, cutoff reconstruction, equal-time event ordering, ownership, CSRF, stale requests and concurrent actions. Verified November 2, 2026: full Maven verification passed 109 tests, zero failures/errors/skips, preserving all 83 previous cases. The 26 new cases comprise 23 task integration tests and 3 validation tests. Flyway V1–V4 and Hibernate mappings passed. No frontend, habits, analytics or AI work was added. Final Day 3 owner review remains pending.
 
 ## Day 4: habits
 
