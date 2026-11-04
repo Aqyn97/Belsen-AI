@@ -3,6 +3,7 @@ package com.belsenai.identity.service;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import com.belsenai.common.error.ApiException;
+import com.belsenai.goals.ReportingCalendar;
 import com.belsenai.identity.dto.*;
 import com.belsenai.identity.entity.User;
 import com.belsenai.identity.repository.UserRepository;
@@ -15,9 +16,11 @@ public class AccountService {
     private final UserRepository users;
     private final PasswordEncoder passwords;
     private final String dummyHash;
+    private final ReportingCalendar calendar;
 
-    public AccountService(UserRepository users, PasswordEncoder passwords) {
+    public AccountService(UserRepository users, PasswordEncoder passwords, ReportingCalendar calendar) {
         this.users = users;
+        this.calendar = calendar;
         this.passwords = passwords;
         this.dummyHash = passwords.encode(UUID.randomUUID().toString());
     }
@@ -51,7 +54,10 @@ public class AccountService {
         if (request.displayName() == null && request.timezone() == null) {
             throw new ApiException(400, "Provide displayName or timezone.");
         }
-        User user = find(id);
+        User user = calendar.lockOwner(id);
+        if(request.timezone()!=null && !request.timezone().equals(user.getTimezone())) {
+            calendar.changeTimezonePolicy(user,request.timezone(),calendar.now());
+        }
         user.updateProfile(request.displayName(), request.timezone());
         return UserResponse.from(user);
     }

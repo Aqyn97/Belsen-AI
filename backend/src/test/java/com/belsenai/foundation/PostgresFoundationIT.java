@@ -56,10 +56,10 @@ class PostgresFoundationIT {
     private SessionRepository<?> sessions;
 
     @Test
-    void connectsAndAppliesBothMigrationsWithHibernateValidation() {
+    void connectsAndAppliesAllMigrationsWithHibernateValidation() {
         assertThat(jdbc.queryForObject("select current_database()", String.class))
                 .isEqualTo(POSTGRES.getDatabaseName());
-        assertThat(flyway.info().applied()).hasSize(4);
+        assertThat(flyway.info().applied()).hasSize(5);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(environment.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
     }

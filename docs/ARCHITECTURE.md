@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habits, analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence and reporting-calendar support are implemented in Day 4 B1; habit operations, analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -55,7 +55,9 @@ Use UUID primary keys, UTC instants for audit events, local dates for user calen
 | `task_events` | Task FK, event type, recorded instant and required state/scheduling changes |
 | `habits` | Owner FK, title, active/archive state and timestamps |
 | `habit_schedule_versions` | Habit FK, effective local date, active weekdays and active flag |
-| `habit_occurrences` | Habit FK, local date, frozen scheduled eligibility, completion instant; unique `(habit_id, local_date)` |
+| `habit_checkins` | Lazy occurrence, owner, local date, frozen reporting week and schedule version, current completion/rest flags; unique `(habit_id, local_date)` |
+| `habit_checkin_events` | Append-only completion/undo/rest state, acceptance instant and occurrence sequence |
+| `reporting_timezone_revisions` | Account reporting-timezone policy, effective Monday, acceptance instant and account sequence |
 | `weekly_summary_snapshots` | Owner FK, week start, timezone, cutoff, raw counts/units, percentages and calculation version |
 | `coach_requests` | Owner FK, quota date, status, reservation instant and minimal provider usage metadata |
 
@@ -259,3 +261,34 @@ Goal recording, voiding and weekly planning capture one acceptance instant after
 Standalone GoalService get/list calls use read-only PostgreSQL REPEATABLE READ transactions through the Spring service proxy. REQUIRES_NEW prevents an enclosing READ COMMITTED transaction from silently overriding this guarantee; an enclosing transaction is suspended, so these reads intentionally cannot see its uncommitted changes and may require another pooled connection. Each response uses one snapshot, not necessarily the newest concurrent commit. Private view assembly does not rely on self-invoked transactional annotations. Other service calls retain their existing isolation.
 
 Write methods returning goal views retain READ COMMITTED: update/archive hold the account and goal locks through view assembly, preventing concurrent goal progress/plan mutations; create returns a newly inserted goal invisible to other transactions until commit. These guarantees assume all application goal writers preserve the account-first locking protocol. Direct SQL writers bypassing it are outside this coordination contract.
+
+
+## Day 4 B1: habit persistence and calendar foundation
+
+Implemented only: V5 tables, JPA mappings/repositories and shared reporting-calendar support. No habit service, controller, public route, completion/rest operation or analytics API exists. V1–V4 are unchanged. The exact fields, PostgreSQL types, foreign keys and checks are defined in `backend/src/main/resources/db/migration/V5__create_habit_tables.sql`.
+
+The five new tables are habits, habit_schedule_versions, habit_checkins, habit_checkin_events and reporting_timezone_revisions. UUID keys and composite foreign keys enforce same-owner relationships and ensure an occurrence's schedule belongs to that same habit. One occurrence is allowed per habit/local date. Positive sequences order revisions and events, including equal timestamps. Enabled weekday masks use bits 0–6 for ISO Monday–Sunday and must be 1–127; disabled schedules use zero. Date ranges are inclusive and ordered. Completed/rest flags are mutually exclusive. Rest-planned events require a nonblank reason. No audit foreign key cascades deletion. PostgreSQL triggers reject schedule/event/timezone-history UPDATE/DELETE and also protect previously frozen reporting-week rows.
+
+Cross-row rules remain service responsibilities: schedule eligibility and date/week membership, prospective changes, valid IANA identifiers, state/event agreement, cutoff eligibility and timestamp/sequence ordering. B1 provides persistence, not these future habit workflows. Database constraints do not replace owner-scoped service authorization.
+
+### Tracking initialization and timezone policy
+
+The future habit-creation transaction must call ReportingCalendar.beginTracking with its server-derived account UUID. It locks the account, captures one acceptance instant, freezes the current week, and inserts a baseline policy using the account profile timezone and current Monday label. Repeated initialization is idempotent. The baseline does not claim knowledge of earlier missing weeks or pre-creation habit obligations. Already-stored weeks remain authoritative, including those preceding the baseline.
+
+AccountService profile updates now acquire the same account lock. Accounts without a tracking baseline retain the existing goal/task calendar policy. Once tracking begins, a timezone change appends an immutable revision effective the next reporting Monday, in the same transaction as the profile update. Profile timezone changes immediately for profile display; reporting changes prospectively. Multiple accepted changes for that Monday retain every revision, with the greatest sequence winning. Backwards reporting-clock changes are rejected rather than backdating a policy.
+
+If any frozen week on or after the proposed effective Monday has a different timezone, the transition returns 409 and rolls back the profile update. No existing reservation is rewritten and no immediate adoption is promised. Matching future reservations are preserved. With no new profile response fields in B1, this prospective rule and conflict response are the contract; B2 should expose effective reporting context in habit DTOs.
+
+### Pure historical resolution
+
+ReportingCalendar.resolveWeek first returns an existing row verbatim. Otherwise it selects the revision with the greatest applicable effective Monday and sequence. It never consults today's profile timezone for missing tracked weeks and returns no result for an absent pre-baseline week. A computed week has a null ID until a write explicitly reserves it. resolveDay intersects ZoneId-derived local midnight boundaries with the resolved week. Missing/skipped local days return no interval; DST days need not last 24 hours.
+
+For missing weeks, preserve the previous policy week's natural end when an eastward change would overlap it, shortening the new week's beginning. Existing frozen neighbors further constrain the window. Conflicting empty weeks produce 409. Westward transitions may leave a gap until the next valid local Monday; current mutations then return a conflict rather than reopen a closed week. Week reservation uses this same calculation, keeping read reconstruction and persisted boundaries aligned.
+
+Standalone resolver calls run in read-only REPEATABLE READ transactions. Calls joining an existing transaction inherit its isolation; a writer must hold the account lock, and a multi-query history service must establish its own consistent snapshot. resolveDay's internal call to resolveWeek shares its existing transaction; it does not depend on self-invoked transaction advice. Neither read method inserts calendar rows. Existing goal/task callers retain their method signatures and locking contract.
+
+### Historical habit contract for B2
+
+Schedule effective_from answers when a revision applies; recorded_at answers when it existed. As-of-cutoff selection must filter recorded_at strictly before cutoff before choosing the latest applicable effective date and sequence. Daily events similarly filter accepted_at strictly before cutoff and select by sequence. local_date identifies the obligation, while reporting_week_id preserves its calendar context. Never use today's check-in flags as an historical cutoff result. Archive metadata must be coordinated with an effective disabled schedule revision, retaining earlier obligations.
+
+Verification on November 4, 2026: full Maven verify passed 138 tests, zero failures/errors/skips, preserving all 116 existing tests and adding 22 PostgreSQL foundation/calendar tests. V1–V5 and Hibernate validation passed. No habit user-facing functionality is claimed by this checkpoint.
