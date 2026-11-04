@@ -248,7 +248,7 @@ class HabitPersistenceIT extends PostgresHttpSupport {
             assertThat(b.request("PATCH","/api/v1/me",Map.of("timezone","UTC"),true).statusCode()).isEqualTo(200);
             assertThat(b.request("GET",goalPath,null,false).statusCode()).isEqualTo(200);
             assertThat(b.request("POST",taskPath+"/reopen",Map.of("version",1),false).statusCode()).isEqualTo(403);
-            assertThat(b.request("POST","/api/v1/habits",Map.of("title","Not implemented"),true).statusCode()).isEqualTo(403);
+            assertThat(b.request("POST","/api/v1/habits/internal-maintenance",Map.of("title","Not implemented"),true).statusCode()).isEqualTo(403);
         }
     }
     @Test void backwardsClockCannotBackdateTimezonePolicy() {

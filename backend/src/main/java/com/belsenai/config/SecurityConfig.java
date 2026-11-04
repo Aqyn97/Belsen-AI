@@ -56,6 +56,11 @@ public class SecurityConfig {
             authorize.requestMatchers(HttpMethod.POST,"/api/v1/tasks","/api/v1/tasks/{id}/complete",
                     "/api/v1/tasks/{id}/reopen","/api/v1/tasks/{id}/reschedule","/api/v1/tasks/{id}/archive").authenticated();
             authorize.requestMatchers(HttpMethod.PATCH,"/api/v1/tasks/{id}").authenticated();
+            authorize.requestMatchers(HttpMethod.GET,"/api/v1/habits","/api/v1/habits/{id}","/api/v1/habits/{id}/history").authenticated();
+            authorize.requestMatchers(HttpMethod.POST,"/api/v1/habits","/api/v1/habits/{id}/schedules","/api/v1/habits/{id}/archive").authenticated();
+            authorize.requestMatchers(HttpMethod.PATCH,"/api/v1/habits/{id}").authenticated();
+            authorize.requestMatchers(HttpMethod.PUT,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
+            authorize.requestMatchers(HttpMethod.DELETE,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
             if (googleEnabled) {
                 authorize.requestMatchers("/oauth2/authorization/google", "/login/oauth2/code/google").permitAll();
             }

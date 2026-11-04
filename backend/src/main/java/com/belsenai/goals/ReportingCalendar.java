@@ -63,13 +63,14 @@ public class ReportingCalendar {
     @Transactional
     public GoalDtos.WeekView beginTracking(UUID ownerId) {
         User owner=lockOwner(ownerId); Instant acceptedAt=now();
-        var policies=revisions.findByOwnerIdOrderBySequenceAsc(ownerId);
-        if(policies.isEmpty()) {
-            var current=current(owner,acceptedAt); openAt(current,acceptedAt);
-            appendPolicy(ownerId,1,current.weekStart,owner.getTimezone(),acceptedAt);
-            return view(current);
-        }
-        return view(current(owner,acceptedAt));
+        return view(beginTracking(owner,acceptedAt));
+    }
+    /** Caller already holds the account lock; share the habit operation's acceptance instant. */
+    public ReportingWeek beginTracking(User owner,Instant acceptedAt) {
+        var policies=revisions.findByOwnerIdOrderBySequenceAsc(owner.getId());
+        var current=current(owner,acceptedAt); openAt(current,acceptedAt);
+        if(policies.isEmpty()) appendPolicy(owner.getId(),1,current.weekStart,owner.getTimezone(),acceptedAt);
+        return current;
     }
 
     /** Caller holds the account lock and updates the profile in the same transaction. */
@@ -122,6 +123,25 @@ public class ReportingCalendar {
             if(end.isAfter(w.endsAt())) end=w.endsAt();
             return end.isAfter(start) ? Optional.of(new DayWindow(w,date,start,end)) : Optional.empty();
         });
+    }
+    /** Read-only current context, including inactivity gaps; never reserves a row. */
+    @Transactional(readOnly=true, isolation=Isolation.REPEATABLE_READ)
+    public Optional<WeekWindow> resolveCurrent(UUID owner,Instant at) {
+        var stored=weeks.findByOwnerIdOrderByWeekStartAsc(owner);
+        var active=stored.stream().filter(w -> !at.isBefore(w.startsAt) && at.isBefore(w.endsAt)).findFirst();
+        if(active.isPresent()) {
+            var w=active.get();return Optional.of(new WeekWindow(w.id,w.weekStart,w.timezone,w.startsAt,w.endsAt));
+        }
+        var policies=revisions.findByOwnerIdOrderBySequenceAsc(owner);
+        for(int i=policies.size()-1;i>=0;i--) {
+            var candidate=monday(LocalDate.ofInstant(at,ZoneId.of(policies.get(i).timezone)));
+            var policy=policyAt(policies,candidate);
+            if(policy.isPresent() && policy.get().sequence==policies.get(i).sequence) {
+                var w=resolveWeek(owner,candidate);
+                if(w.isPresent() && !at.isBefore(w.get().startsAt()) && at.isBefore(w.get().endsAt())) return w;
+            }
+        }
+        return Optional.empty();
     }
     private WeekWindow window(LocalDate monday,String timezone,List<ReportingWeek> stored,
             List<ReportingTimezoneRevision> policies) {

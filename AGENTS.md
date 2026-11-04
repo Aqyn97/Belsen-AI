@@ -2,14 +2,14 @@
 
 ## Scope and current state
 
-This repository is in Day 2 backend development. Stage B provides Spring Boot, PostgreSQL/Flyway, JDBC sessions, security and foundation tests. Stage C implements authentication, Google OIDC, profiles and security tests. Live Google browser login remains unverified. No frontend or deployment exists. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
+This repository has the Day 4 habit backend implemented. Authentication, profiles, goals, tasks, immutable task/habit history, frozen reporting weeks and prospective timezone policy are present. Habit schedules, daily completion/undo, prospective habit rest and bounded cutoff-aware history are implemented. Strict consistency rules are internal only; public analytics, frontend, coaching and deployment remain planned. Google OIDC has mock-provider coverage; live Google browser login remains unverified. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
 
 The completed Day 1 foundation task was restricted to `README.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig`, `.env.example`, `AGENTS.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and `docs/DECISIONS.md`. Later implementation requires an authorized work package. Stage C does not authorize frontend or other product features.
 
 ## Manual Git control
 
 - Inspect Git status before work and preserve the owner's changes.
-- Do not stage, commit or push unless the owner explicitly authorizes that action. The owner currently intends to commit and push personally.
+- Do not stage, commit or push unless the owner explicitly authorizes that action. Default to manual owner Git control unless a specific work package authorizes agent commit/push after its verification gates.
 - Never rewrite Git history. Do not create pull requests without permission.
 - A proposed commit message is not permission to execute it.
 
@@ -24,6 +24,9 @@ The completed Day 1 foundation task was restricted to `README.md`, `CONTRIBUTING
 - Return no-data states instead of fabricated percentages. Keep AI suggestions separate from verified metrics; AI must never modify user data.
 - Enforce resource ownership, input validation, session security and CSRF protection. Keep all credentials and AI keys server-side and out of source control.
 - Retain the visual identity: primary `#FACC15`, background `#FAFAF7`, dark text `#171717`, white surfaces `#FFFFFF`.
+- Habit mutations lock account then owned habit, capture one microsecond-precision acceptance instant, and require the habit's expected version. Retain immutable schedule/event records; never use current flags to answer historical cutoffs. Future schedule selection uses the highest applicable accepted revision sequence.
+- Habit rest planning/cancellation must precede the reporting day start. Preserve obsolete rest events and previous obligations when archiving from tomorrow.
+- Keep history bounded and snapshot-consistent. Never create occurrences or reporting weeks during reads. Preserve V1–V5; new schema changes require a new authorized migration.
 - Explain dependency choices before installing them. Avoid unnecessary infrastructure and abstractions.
 
 ## Evidence and review

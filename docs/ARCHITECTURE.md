@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence and reporting-calendar support are implemented in Day 4 B1; habit operations, analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; public analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -63,7 +63,7 @@ Use UUID primary keys, UTC instants for audit events, local dates for user calen
 
 Users own goals, tasks, habits, reports and coaching requests. Child records inherit ownership through their parent. Every access must be owner-scoped, including references between resources. Check that an associated goal belongs to the task owner. Database foreign keys protect relationships; service checks protect ownership.
 
-Use check constraints for positive targets, progress and durations. Validate allowed states and weekday values. Index owner/date filters, task original due dates, `(task_id, recorded_at)`, habit/date lookups and goal progress dates. Add uniqueness for schedule effective dates and snapshot owner/week. Avoid indexing every field without a query need.
+Use check constraints for positive targets, progress and durations. Validate allowed states and weekday values. Index owner/date filters, task original due dates, `(task_id, recorded_at)`, habit/date lookups and goal progress dates. Use unique per-habit schedule sequences (multiple accepted revisions may share an effective date) and unique snapshot owner/week. Avoid indexing every field without a query need.
 
 Use Spring Session JDBC tables for persistent server-side sessions when authentication is implemented. Configure their creation through reviewed migrations rather than unmanaged production schema initialization.
 
@@ -73,7 +73,7 @@ Tasks keep their current state for ordinary screens. Append events only for crea
 
 Archive instead of hard-deleting MVP activities. Archiving must not erase historical obligations. An incomplete archived task remains incomplete in its original reporting cohort. Previously scheduled habit days remain eligible.
 
-Habit schedule edits and deactivation take effect no earlier than the following local day, so today's obligations cannot disappear after a partial completion. Creation may schedule today. Freeze occurrences for elapsed days; generate missing days lazily from effective schedule versions. Daily completion can be toggled only within the open reporting week and not for future days.
+Habit schedule edits and deactivation take effect no earlier than the following local day, so today's obligations cannot disappear after a partial completion. Creation may schedule today. Create occurrences lazily on actual mutations; reconstruct elapsed missing obligations from effective schedule versions without read-side inserts. Daily completion can be toggled only within the open reporting week and not for future days.
 
 Goal progress corrections void and replace entries within the open week. Do not allow backdated edits to closed periods. A weekly plan becomes fixed when its week starts; a first plan created during the week is allowed, then fixed. Future plans remain editable. Goal units cannot change after progress or weekly plans exist. This preserves the meaning of historical values.
 
@@ -117,7 +117,7 @@ Zero denominators produce a `null` percentage and a reason such as `NO_SCHEDULED
 
 ## REST API
 
-Application routes use `/api/v1`, JSON DTOs and ISO dates/timestamps. Collection endpoints need bounded pagination. The routes below are proposed contracts, not existing endpoints.
+Application routes use `/api/v1`, JSON DTOs and ISO dates/timestamps. Collection endpoints need bounded pagination. The table combines implemented backend routes with target MVP contracts; README identifies current capabilities and full habit contracts.
 
 | Method and route | Responsibility |
 | --- | --- |
@@ -135,7 +135,10 @@ Application routes use `/api/v1`, JSON DTOs and ISO dates/timestamps. Collection
 | `GET /tasks/{id}`, `PATCH /tasks/{id}` | Read/edit task details; scheduling/state use explicit actions |
 | `POST /tasks/{id}/complete`, `/reopen`, `/reschedule`, `/archive` | Apply a task action and retain required history |
 | `GET /habits`, `POST /habits` | List/create owned habits |
-| `GET /habits/{id}`, `PATCH /habits/{id}` | Read/edit details and future schedule |
+| `GET /habits/{id}`, `PATCH /habits/{id}` | Read/edit metadata |
+| `POST /habits/{id}/schedules` | Append a future schedule revision |
+| `PUT /habits/{id}/rest-days/{date}`, `DELETE /habits/{id}/rest-days/{date}` | Plan/cancel prospective habit-specific rest |
+| `GET /habits/{id}/history` | Bounded current-state or explicit-cutoff history |
 | `PUT /habits/{id}/completions/{date}` | Idempotently complete an eligible occurrence |
 | `DELETE /habits/{id}/completions/{date}` | Reopen an occurrence in an open week |
 | `POST /habits/{id}/archive` | Stop future scheduling without erasing history |
@@ -265,7 +268,7 @@ Write methods returning goal views retain READ COMMITTED: update/archive hold th
 
 ## Day 4 B1: habit persistence and calendar foundation
 
-Implemented only: V5 tables, JPA mappings/repositories and shared reporting-calendar support. No habit service, controller, public route, completion/rest operation or analytics API exists. V1–V4 are unchanged. The exact fields, PostgreSQL types, foreign keys and checks are defined in `backend/src/main/resources/db/migration/V5__create_habit_tables.sql`.
+At the B1 checkpoint, implemented only: V5 tables, JPA mappings/repositories and shared reporting-calendar support. No habit service, controller, public route, completion/rest operation or analytics API existed at that checkpoint; B2 below implements the habit workflows. V1–V4 are unchanged. The exact fields, PostgreSQL types, foreign keys and checks are defined in `backend/src/main/resources/db/migration/V5__create_habit_tables.sql`.
 
 The five new tables are habits, habit_schedule_versions, habit_checkins, habit_checkin_events and reporting_timezone_revisions. UUID keys and composite foreign keys enforce same-owner relationships and ensure an occurrence's schedule belongs to that same habit. One occurrence is allowed per habit/local date. Positive sequences order revisions and events, including equal timestamps. Enabled weekday masks use bits 0–6 for ISO Monday–Sunday and must be 1–127; disabled schedules use zero. Date ranges are inclusive and ordered. Completed/rest flags are mutually exclusive. Rest-planned events require a nonblank reason. No audit foreign key cascades deletion. PostgreSQL triggers reject schedule/event/timezone-history UPDATE/DELETE and also protect previously frozen reporting-week rows.
 
@@ -289,6 +292,29 @@ Standalone resolver calls run in read-only REPEATABLE READ transactions. Calls j
 
 ### Historical habit contract for B2
 
-Schedule effective_from answers when a revision applies; recorded_at answers when it existed. As-of-cutoff selection must filter recorded_at strictly before cutoff before choosing the latest applicable effective date and sequence. Daily events similarly filter accepted_at strictly before cutoff and select by sequence. local_date identifies the obligation, while reporting_week_id preserves its calendar context. Never use today's check-in flags as an historical cutoff result. Archive metadata must be coordinated with an effective disabled schedule revision, retaining earlier obligations.
+Schedule effective_from answers when a revision applies; recorded_at answers when it existed. As-of-cutoff selection must filter recorded_at strictly before cutoff before choosing the highest accepted sequence among revisions whose effective date has arrived. Daily events similarly filter accepted_at strictly before cutoff and select by sequence. local_date identifies the obligation, while reporting_week_id preserves its calendar context. Never use today's check-in flags as an historical cutoff result. Archive metadata must be coordinated with an effective disabled schedule revision, retaining earlier obligations.
 
 Verification on November 4, 2026: full Maven verify passed 138 tests, zero failures/errors/skips, preserving all 116 existing tests and adding 22 PostgreSQL foundation/calendar tests. V1–V5 and Hibernate validation passed. No habit user-facing functionality is claimed by this checkpoint.
+
+
+## Day 4 B2: secure routines and historical check-ins
+
+HabitService owns transactions; HabitController derives the account UUID from the existing session principal and exposes DTOs only. Explicit security method/path matchers authorize the implemented habit routes and retain CSRF and deny-by-default. No authentication/session settings or migrations change. See README for the complete HTTP contract.
+
+Every mutation locks account then owned habit and captures one logical acceptance instant, truncated to PostgreSQL microseconds. Habit creation shares that instant with the B1 tracking initialization overload, initial schedule and metadata. Calendar selection, day eligibility, timestamps and versioned state use that same instant even if persistence finishes after a boundary. Backwards logical clocks produce conflicts. Actual habit changes increment an audit sequence so Hibernate versions advance even under a fixed clock. The habit version is the common concurrency token; occurrence versions and event sequences are additional persistence safeguards. Matching-version no-ops add no events; stale retries conflict.
+
+Schedule selection first filters by acceptance cutoff and then chooses the highest sequence among revisions effective on the requested date. This deliberately supersedes previously pending plans from the new revision's effective date onward. Archive appends a higher-sequence disabled revision effective tomorrow, preventing an older pending schedule from reactivating it. Metadata remains current; it does not drive historical eligibility. Current detail exposes the current schedule and latest still-applicable pending revision, not every future transition. History pages preserve all accepted versions.
+
+Completion and undo require a begun, scheduled non-rest date in the current open frozen reporting week. Earlier dates within that week may be checked in; closed periods cannot change. Archive preserves pre-effective obligations, including open-week completion/undo. Rest planning and cancellation require acceptance before the target day starts. Rest is habit-specific; no full-day exclusion is implemented. Rest that becomes unscheduled remains auditable but inapplicable and can be cancelled prospectively. Actual future rest changes reserve their target reporting week; no-op cancellation does not. Original occurrence schedule references remain immutable context while day views show the schedule effective at the selected cutoff.
+
+Each actual daily transition atomically saves the occurrence, advances its sequence, appends resulting-state history and advances the habit version. A failure after flushed SQL rolls back state, history and versions. Events retain their action reporting week separately from the occurrence's target reporting week. Same-account serialization coordinates schedule/archive, daily actions and profile timezone updates without additional infrastructure.
+
+Get/list/history use read-only REPEATABLE READ with REQUIRES_NEW through the service proxy. Private helpers share the caller transaction; write responses remain protected by the account lock. Nested read calls need another pooled connection and cannot see outer uncommitted writes. History uses date ranges of at most 93 days, page sizes 1–100 and separate day/action/schedule pages. Queries are owner-scoped and bounded. Missing occurrences do not erase obligations and are never materialized by reads.
+
+Without an explicit cutoff, history includes equal-timestamp committed actions. An explicit cutoff is exclusive for schedule recordedAt and event acceptedAt. Exclusive SQL bounds are ceiled to microseconds to preserve exact ordering against persisted microsecond ticks, while the API retains the original cutoff. Current occurrence flags and archive status never substitute for cutoff-filtered revisions/events. Unstarted dates are excluded from eligibility; explicit-cutoff responses omit their reportingDay rather than expose later timezone intentions. Frozen boundaries of begun dates remain authoritative. The response version is always the current optimistic token, not an as-of metadata revision.
+
+HabitRules provides internal bounded consistency calculation over authoritative day evidence: group by date, remove habit rest/unscheduled/future rows, require every remaining habit complete, preserve integer counts and return a null percentage for no eligible dates. No public analytics API or closed-summary snapshot builder is implemented. A future snapshot builder must coordinate with in-flight accepted writes before freezing a closed result; a read-only snapshot only sees transactions committed when that snapshot was established.
+
+Known tradeoffs: shared account locks serialize writes; history uses several queries per returned date/action and loads shared calendar policy history. Bounds limit each response, but workload-based query optimization remains future work. State toggles have no new rate limiter. Planned future rest can prevent a timezone change while incompatible frozen reservations remain. Standalone read snapshots are consistent but may omit newer concurrent commits.
+
+Verified November 4, 2026: Maven verify passed 182 tests (42 unit, 140 PostgreSQL integration), zero failures/errors/skips. All 138 baseline cases remain, with one B1 route-availability assertion moved to an unsupported path; 44 new cases cover rules, workflows, ownership/CSRF, cutoff precision, concurrency, rollback and snapshot consistency. Flyway V1–V5 and Hibernate validation passed.

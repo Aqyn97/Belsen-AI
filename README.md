@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 3 backend, goals and tasks.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
+**Day 4 backend: goals, tasks and habits.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
 
 | Area | Status |
 | --- | --- |
@@ -18,7 +18,8 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Google OIDC | Implemented; mock-provider tests; live verification pending |
 | Goals, progress entries and weekly targets | Implemented; goals-stage verification below |
 | Tasks and append-only history | Implemented; task-stage verification below |
-| Habits and consistency tracking | Planned |
+| Habit routines, rest and historical check-ins | Implemented; PostgreSQL/HTTP tests |
+| Strict consistency calculation | Internal rules tested; public analytics remains planned |
 | Weekly analytics | Planned |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
@@ -129,7 +130,7 @@ The first progress or weekly-plan write freezes the account's current reporting 
 
 Archived goals retain history but reject changes. Identical progress retries still return their original entry, including its void state. Units cannot change after entries or plans exist; changing the lifetime target recalculates only the lifetime percentage. Stale versions return `409`.
 
-**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks are now implemented in Stage C; habits, dashboards, AI and frontend remain unimplemented.
+**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks were subsequently implemented in Stage C and habits in Day 4 B2; dashboards, AI and frontend remain unimplemented.
 
 ## Tasks API (Day 3, Stage C)
 
@@ -158,11 +159,40 @@ Events are stored transactionally with task state, have per-task sequence number
 
 **Verified November 2, 2026:** full Maven `verify` passed 109 tests, zero failures/errors/skips: all 83 previous cases plus 23 PostgreSQL/HTTP task tests and 3 task validation tests. Flyway V1–V4 and Hibernate validation passed.
 
+## Habits API (Day 4, Stage B2)
+
+Habit routes require the existing session; every mutation requires CSRF. Foreign IDs return `404`. Owners and audit fields are server-derived. No public consistency dashboard endpoint exists.
+
+| Method and route under `/api/v1/habits` | Contract |
+| --- | --- |
+| `POST /` | `title`, optional `description`, 1–7 distinct ISO `weekdays` (Monday=1), `startDate` today or later, optional inclusive `endDate`; `201` |
+| `GET /`, `GET /{id}` | Paginated non-archived list by default (`archived=true` selects archived); details include current and latest pending schedule and effective reporting week |
+| `PATCH /{id}` | Expected `version`, changed title/description; omission preserves values, explicit null clears description |
+| `POST /{id}/schedules` | `version`, `effectiveFrom` tomorrow or later, weekdays, startDate and optional endDate |
+| `PUT /{id}/completions/{date}` | `version` and the date's Monday `weekStart`; scheduled non-rest dates in the current open week only, never future days |
+| `DELETE /{id}/completions/{date}?weekStart=YYYY-MM-DD` | Undo using strict `If-Match: "N"` |
+| `PUT /{id}/rest-days/{date}` | `version`, `weekStart`, nonblank `reason`; must precede the target day start |
+| `DELETE /{id}/rest-days/{date}?weekStart=YYYY-MM-DD` | Cancel before day start, using `If-Match: "N"` |
+| `GET /{id}/history?from=YYYY-MM-DD&to=YYYY-MM-DD` | At most 93 dates; independent day/action/schedule pagination, frozen calendar context and audit history |
+| `POST /{id}/archive` | `version`; disable scheduling from tomorrow, retaining earlier obligations and history |
+
+All mutations use the habit's returned version, including daily actions. Matching-version same-state repeats do not add events or increment the version; stale repeats return `409`. A delayed completion retry cannot undo a newer undo. DELETE requires exactly one quoted nonnegative integer: missing headers, weak validators, wildcards and lists return `400`. Dates use years 1900–9998. Collection sizes are 1–100.
+
+Schedules are immutable. For a date, the highest accepted revision sequence whose effective date has arrived wins. A new revision supersedes older pending revisions from its effective date onward. `latestPendingSchedule` is the most recently accepted pending revision still capable of applying, not a full calendar of upcoming changes; paginated history retains all revisions. Archive wins over older pending schedules. Today's obligations cannot be removed by editing tomorrow's schedule, and archived habits can still complete or undo retained open-week obligations.
+
+Rest is habit-specific, prospective and auditable. It cannot erase incomplete work after a day starts. If a schedule makes an existing rest inapplicable, history keeps `restPlanned=true` with `restApplicable=false`; cancellation remains possible before the day starts. Full-day account exclusions are not implemented. Planning a future rest freezes that week; conflicting later timezone changes return `409`. Matching-version no-op cancellation does not create a future reservation.
+
+History returns separate `days`, `actions` and `schedules` pages. Parameters are `page`, `actionPage`, `schedulePage` (default 0) and shared `size` (default 20). Without `cutoff`, it returns current committed state, including equal-timestamp accepted events. With an explicit ISO instant `cutoff`, it returns only schedules/actions accepted strictly before that instant; future cutoffs return `400`, and a habit not yet created returns `404`. Sub-microsecond cutoffs are handled without losing persisted events. Unstarted dates are ineligible; an explicit-cutoff response omits their `reportingDay` because later timezone intentions must not appear as historical facts. Started dates carry effective timezone and frozen/clipped day/week boundaries. A computed, unreserved week has a null ID; detail reporting context can be null during a timezone transition gap, when calendar-dependent writes return `409`. `version` is the current concurrency token, not historical metadata. Reads never create missing occurrences or calendar rows.
+
+Consistency rules are internal and tested: one day succeeds only when all its remaining scheduled obligations are complete; habit rest removes only that habit, future days are excluded, and zero eligible days produces a null percentage. No habit action creates goal progress.
+
+**Verified November 4, 2026:** Maven `verify` passed **182 tests**: 42 unit and 140 PostgreSQL integration tests, zero failures/errors/skips. This preserves the 138-test B1 baseline and adds 9 rule tests plus 35 habit HTTP/integration tests. Flyway V1–V5 and Hibernate validation passed.
+
 ## Current limitations
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-No frontend, account linking, password reset, email verification, habits, analytics, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
+No frontend, account linking, password reset, email verification, analytics, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
 
 ## Documentation
 

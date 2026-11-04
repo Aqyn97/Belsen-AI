@@ -8,8 +8,8 @@ Each day has one main work package. Integrate small frontend slices from Day 3 o
 | --- | --- | --- | --- |
 | 1 | October 31 | Architecture and documentation foundation | Complete; owner confirmed |
 | 2 | November 1 | Runtime and authentication | Stage B/C implemented; live Google verification pending |
-| 3 | November 2 | Goals and tasks | Backend implemented; final owner review pending |
-| 4 | November 3 | Habits | Planned |
+| 3 | November 2 | Goals and tasks | Backend implemented and committed; browser slice remains planned |
+| 4 | November 3 | Habits | B1/B2 backend implemented November 4; browser slice remains planned |
 | 5 | November 4 | Analytics | Planned |
 | 6 | November 5 | Frontend integration | Planned |
 | 7 | November 6 | AI coaching and release | Planned |
@@ -67,7 +67,7 @@ Goals, lifetime progress, weekly plans, frozen reporting calendar, auditable voi
 
 ### Day 3 Stage C checkpoint
 
-Task CRUD/actions, owned active goal links, stable filtered lists, optimistic conflict handling and append-only ordered events are implemented. Reporting uses the Stage B frozen calendar. New tests cover transactional rollback after a flushed UPDATE, cutoff reconstruction, equal-time event ordering, ownership, CSRF, stale requests and concurrent actions. Verified November 2, 2026: full Maven verification passed 109 tests, zero failures/errors/skips, preserving all 83 previous cases. The 26 new cases comprise 23 task integration tests and 3 validation tests. Flyway V1–V4 and Hibernate mappings passed. No frontend, habits, analytics or AI work was added. Final Day 3 owner review remains pending.
+Task CRUD/actions, owned active goal links, stable filtered lists, optimistic conflict handling and append-only ordered events are implemented. Reporting uses the Stage B frozen calendar. New tests cover transactional rollback after a flushed UPDATE, cutoff reconstruction, equal-time event ordering, ownership, CSRF, stale requests and concurrent actions. Verified November 2, 2026: full Maven verification passed 109 tests, zero failures/errors/skips, preserving all 83 previous cases. The 26 new cases comprise 23 task integration tests and 3 validation tests. Flyway V1–V4 and Hibernate mappings passed. No frontend, habits, analytics or AI work was added. At that checkpoint final owner review remained pending; Day 3 was subsequently committed as b132059.
 
 ## Day 4: habits
 
@@ -80,6 +80,12 @@ Acceptance criteria:
 - Schedule, timezone, ownership and completion tests pass; a browser slice shows daily habits.
 
 Dependency: authenticated users with reporting timezones. Occurrence reconstruction must work even when users skip opening the app for several days.
+
+### Day 4 B2 checkpoint
+
+Implemented the habit REST backend: owner-scoped creation/list/detail/metadata, immutable future schedules, versioned completion/undo, prospective habit-specific rest/cancellation, archive and bounded historical obligations/actions. Current-state and exclusive-cutoff history use consistent snapshots and preserve immutable records. Internal consistency rules use strict daily success and no-data results. Public analytics and frontend remain planned; the browser acceptance criterion above is not complete. V1–V5 remain unchanged by B2.
+
+Verified November 4, 2026: full Maven verification passed **182 tests** (42 unit, 140 PostgreSQL integration), zero failures/errors/skips. All 138 previous tests remain, with the B1 unavailable-route assertion updated to retain deny-by-default coverage for an unsupported route. The 44 new cases comprise 9 rule tests and 35 habit integration tests. Flyway V1–V5 and Hibernate validation passed.
 
 ## Day 5: analytics
 

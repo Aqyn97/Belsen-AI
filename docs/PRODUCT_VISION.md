@@ -4,7 +4,7 @@
 
 Belsen-AI helps people plan daily actions and understand whether they are staying consistent. Its tagline is “Plan better. Stay consistent. Grow.” The product is a web application for people seeking simple personal organization, including those unfamiliar with productivity tools.
 
-The first MVP is targeted for November 6, 2026. The repository is currently in the foundation stage; all application features below are planned.
+The first MVP is targeted for November 6, 2026. The authentication, goals, tasks and habit backends are implemented. The web interface, public analytics and coaching remain planned; Google browser login and deployment remain unverified. The table below describes the target MVP.
 
 ## Primary journey
 
@@ -41,7 +41,7 @@ Habit consistency is **eligible days on which every scheduled habit is complete 
 
 An eligible day has at least one scheduled habit. If reading and walking are both scheduled on Monday, completing only reading does not make Monday successful. If two of three eligible days are fully complete, consistency is 66.7%, even if many individual habits were completed on the third day. This measures complete daily routines, so the interface must show both the percentage and successful/eligible day counts.
 
-Planned rest days have no scheduled habits and are excluded. Deactivating a habit affects future schedules and does not erase earlier obligations.
+A habit-specific planned rest removes only that habit’s obligation. Other scheduled habits still determine the day’s success. If no obligations remain, the day is excluded. Rest must be planned and cancelled before the day starts, so incomplete work cannot be erased afterward. Full-day account exclusions are deferred. Schedule changes and archive take effect tomorrow or later and preserve earlier obligations.
 
 ### Weekly goal progress
 
