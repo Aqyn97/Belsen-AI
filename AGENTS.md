@@ -2,7 +2,7 @@
 
 ## Scope and current state
 
-This repository has the Day 4 habit backend implemented. Authentication, profiles, goals, tasks, immutable task/habit history, frozen reporting weeks and prospective timezone policy are present. Habit schedules, daily completion/undo, prospective habit rest and bounded cutoff-aware history are implemented. Strict consistency rules are internal only; public analytics, frontend, coaching and deployment remain planned. Google OIDC has mock-provider coverage; live Google browser login remains unverified. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
+This repository has the Day 5 read-only analytics dashboard backend implemented. Authentication, profiles, goals, tasks, immutable task/habit history, frozen reporting weeks and prospective timezone policy are present. Habit schedules, daily completion/undo, prospective habit rest and bounded cutoff-aware history are implemented. The authenticated dashboard API uses strict consistency rules, original task cohorts and explicit weekly goal units. Closed reports are CLOSED_UNFINALIZED; immutable finalization, frontend, coaching and deployment remain planned. Google OIDC has mock-provider coverage; live Google browser login remains unverified. Read `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` before implementation.
 
 The completed Day 1 foundation task was restricted to `README.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig`, `.env.example`, `AGENTS.md`, `docs/PRODUCT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and `docs/DECISIONS.md`. Later implementation requires an authorized work package. Stage C does not authorize frontend or other product features.
 
@@ -27,6 +27,7 @@ The completed Day 1 foundation task was restricted to `README.md`, `CONTRIBUTING
 - Habit mutations lock account then owned habit, capture one microsecond-precision acceptance instant, and require the habit's expected version. Retain immutable schedule/event records; never use current flags to answer historical cutoffs. Future schedule selection uses the highest applicable accepted revision sequence.
 - Habit rest planning/cancellation must precede the reporting day start. Preserve obsolete rest events and previous obligations when archiving from tomorrow.
 - Keep history bounded and snapshot-consistent. Never create occurrences or reporting weeks during reads. Preserve V1–V5; new schema changes require a new authorized migration.
+- Analytics must use one read-only REPEATABLE READ transaction and one exclusive cutoff. Use owner-scoped projections, never resource view services that open separate transactions. Never label an unpersisted report FINALIZED or fabricate historical metadata/timezones.
 - Explain dependency choices before installing them. Avoid unnecessary infrastructure and abstractions.
 
 ## Evidence and review

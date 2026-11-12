@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; public analytics, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; immutable finalization, coach and frontend remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -87,7 +87,7 @@ All modules and screens must use these definitions. Calculate with raw counts an
 - Current-week cutoff is the current instant. Closed-week cutoff is the end boundary; events at that boundary belong to the next period.
 - Resolve boundaries using timezone rules, not fixed 24-hour arithmetic, to handle daylight-saving changes.
 - Lock the reporting timezone for a started week. A profile timezone change takes effect for reporting at the next week boundary in the existing reporting timezone. Show the pending change and use one consistent reporting timezone for scheduling until then.
-- Store timezone and cutoff on closed snapshots. Build a missing snapshot lazily from historical state before serving it. Closed results are immutable; corrections to closed weeks are outside the MVP.
+- Store timezone and cutoff on closed snapshots. Planned finalization will build immutable closed snapshots from historical state through a separately authorized write path. Day 5 B1 creates no snapshots and labels closed results CLOSED_UNFINALIZED; corrections to closed weeks remain outside the MVP.
 
 ### Task completion
 
@@ -142,7 +142,7 @@ Application routes use `/api/v1`, JSON DTOs and ISO dates/timestamps. Collection
 | `PUT /habits/{id}/completions/{date}` | Idempotently complete an eligible occurrence |
 | `DELETE /habits/{id}/completions/{date}` | Reopen an occurrence in an open week |
 | `POST /habits/{id}/archive` | Stop future scheduling without erasing history |
-| `GET /analytics/weekly?weekStart=YYYY-MM-DD` | Return deterministic counts, per-goal progress and report metadata |
+| `GET /analytics/dashboard?weekStart=YYYY-MM-DD` | Return coherent task/habit counts, paginated goal progress and unfinalized report metadata |
 | `POST /coach/analyses` | Analyze a selected accessible weekly summary within quota |
 
 Google login uses Spring Security's `/oauth2/authorization/google` entry and `/login/oauth2/code/google` callback outside the versioned application API.
@@ -318,3 +318,26 @@ HabitRules provides internal bounded consistency calculation over authoritative 
 Known tradeoffs: shared account locks serialize writes; history uses several queries per returned date/action and loads shared calendar policy history. Bounds limit each response, but workload-based query optimization remains future work. State toggles have no new rate limiter. Planned future rest can prevent a timezone change while incompatible frozen reservations remain. Standalone read snapshots are consistent but may omit newer concurrent commits.
 
 Verified November 4, 2026: Maven verify passed 182 tests (42 unit, 140 PostgreSQL integration), zero failures/errors/skips. All 138 baseline cases remain, with one B1 route-availability assertion moved to an unsupported path; 44 new cases cover rules, workflows, ownership/CSRF, cutoff precision, concurrency, rollback and snapshot consistency. Flyway V1–V5 and Hibernate validation passed.
+
+
+## Day 5 B1: read-only analytics dashboard
+
+The implemented endpoint is GET /api/v1/analytics/dashboard. DashboardController derives the owner from the session principal, rejects unsupported/repeated/blank parameters and returns no-store. Security authorizes only that exact GET route. Existing mutations retain CSRF. README defines request parameters, DTO fields, no-data reasons and status codes.
+
+DashboardService captures the clock once and runs through the Spring proxy in read-only REPEATABLE READ with REQUIRES_NEW, preventing an enclosing transaction from silently weakening isolation. DashboardReader uses MANDATORY propagation and the same transaction-bound JDBC connection; no metric opens a separate transaction or calls a resource GET/view service. A deterministic concurrent-commit test and JDBC transaction-setting assertions verify the boundary. Nested callers need another connection and cannot expose outer uncommitted writes. Response pages from separate requests have independent snapshots.
+
+A period is either stored/FROZEN, resolved from reporting policy/RECONSTRUCTED, or a current-week UNFROZEN preview for an account with no calendar history. Bounded ReportingCalendar read methods use an exact week lookup, latest applicable policy, its preceding policy and indexed adjacent frozen weeks. They preserve the existing ordered, non-overlapping calendar invariant without loading entire histories or writing rows. Pure day clipping uses the shared calendar and IANA rules, including skipped dates and DST. Missing pre-baseline history is unavailable. A legacy account without tracking policy or a current reservation can receive a calendar conflict rather than a guessed preview.
+
+All metrics use timestamps strictly before one cutoff C. Default C is now for an open period or end for a closed period. Explicit cutoffs require start < C <= min(now,end); default reads at the exact opening instant are valid. An exclusive SQL bound is ceiled to PostgreSQL microseconds, preserving the precise comparison against stored ticks. The original cutoff remains in the DTO. Date/interval and pagination validation happen before metric queries.
+
+Task projections select current-table candidates by owner and immutable original date range, then choose the highest-sequence event before C for each task using an indexed lateral lookup. Only snapshots already carrying the selected original reporting-week ID count. Thus a first assignment after C is excluded even when the current task row is dated. The event action week is not a filter. Archive, reschedule and due-date removal preserve obligations; a last OPEN state after reopening is incomplete. Future dates inside the original week count once assigned. Raw counts produce a Java/BigDecimal percentage; zero cohort produces NO_SCHEDULED_TASKS.
+
+Habit projections receive at most seven valid, started day contexts from Java. One set-based query selects the highest applicable schedule sequence accepted before C, applies date/weekday eligibility, and joins at most one occurrence and one latest event per habit/date. Current occurrence flags are never used as historical state. Habit-specific rest is removed before grouping counts by date. Archived habits retain earlier days; disabled revisions and acceptance timestamps determine their future obligations. HabitRules.consistencyFromDays reuses the strict rule from existing habit evidence: a positive remaining count makes the day eligible, and every remaining obligation must be complete. It returns integer day counts and a rounded display percentage, with NO_SCHEDULED_ACTIVITY for zero eligible days. The database returns at most seven aggregate rows rather than all habit/date pairs.
+
+Goal count/page queries select goals created before C which were active at C or have a weekly plan/activity accepted before C. Relevant archived goals remain even if entries were later voided. For each bounded page, a separate lateral SUM includes entries for the selected owner/week/date range with created_at < C and (voided_at IS NULL OR voided_at >= C). Plans are unique per goal/week and must have existed before C. Aggregation occurs before any multiplicative history join; totals retain PostgreSQL aggregate NUMERIC/Java BigDecimal precision. Missing targets yield units and NO_WEEKLY_TARGET, not a percentage. Current goal titles are marked titleMetadata=CURRENT. Units come from current metadata, frozen once any planning/progress exists; earlier metadata versions and future-plan edits before week start are not reconstructed. In-period cutoffs are supported because weekly-plan edits are forbidden once the week starts.
+
+B1 adds no snapshots, finalization path or V6. Report status depends on whether the reporting week has ended: PROVISIONAL or CLOSED_UNFINALIZED, including explicit earlier-cutoff queries. Snapshot consistency means one coherent committed database view, not an immutable historical publication. A write logically accepted before cutoff but committed after the read snapshot can change a later response. Future finalization must drain account writers before establishing its calculation snapshot and coordinate currently unlocked goal creation if it includes no-activity goals. It remains separately authorized work.
+
+Performance review uses an isolated PostgreSQL fixture with roughly 4,000 tasks and 1,000 habits: native metric query count remains constant, and the task plan uses the existing task/sequence index for last-event lookups. The planner may choose a sequential scan when a large fraction of the small task table belongs to the cohort. No speculative indexes were added. This is query-shape evidence, not a production latency benchmark. Execution work still scales with relevant account records; long per-resource histories and large active-goal collections may need measured indexing/tuning later. Calendar result sets, metric result sets and goal responses are bounded.
+
+Verified November 5, 2026: full Maven verify passed 231 tests (50 unit, 181 PostgreSQL integration), zero failures/errors/skips, retaining all 182 baseline cases. The 49 new cases include 8 focused rule tests and 41 dashboard integration tests. Flyway V1–V5 and Hibernate validation passed. Invalid stored timezone handling and default exact-week-opening behavior have regression coverage. No migration or dependency was introduced.

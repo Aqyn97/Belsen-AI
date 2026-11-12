@@ -143,6 +143,52 @@ public class ReportingCalendar {
         }
         return Optional.empty();
     }
+    /** Bounded analytics lookups. Caller supplies a single read-only database snapshot. */
+    public boolean hasHistory(UUID owner) {
+        return weeks.existsByOwnerId(owner) || revisions.existsByOwnerId(owner);
+    }
+    public Optional<WeekWindow> readWeek(UUID owner,LocalDate monday) {
+        var stored=weeks.findByOwnerIdAndWeekStart(owner,monday);
+        if(stored.isPresent()) {
+            var w=stored.get();return Optional.of(new WeekWindow(w.id,w.weekStart,w.timezone,w.startsAt,w.endsAt));
+        }
+        var policy=revisions.findFirstByOwnerIdAndEffectiveWeekStartLessThanEqualOrderByEffectiveWeekStartDescSequenceDesc(owner,monday);
+        if(policy.isEmpty()) return Optional.empty();
+        ZoneId zone=ZoneId.of(policy.get().timezone);
+        Instant start=monday.atStartOfDay(zone).toInstant(),end=monday.plusWeeks(1).atStartOfDay(zone).toInstant();
+        var previous=revisions.findFirstByOwnerIdAndEffectiveWeekStartLessThanEqualOrderByEffectiveWeekStartDescSequenceDesc(owner,monday.minusWeeks(1));
+        if(previous.isPresent()) {
+            Instant boundary=monday.atStartOfDay(ZoneId.of(previous.get().timezone)).toInstant();
+            if(boundary.isAfter(start)) start=boundary;
+        }
+        // Frozen weeks are ordered and non-overlapping; immediate neighbors bound this interval.
+        Instant previousEnd=weeks.findFirstByOwnerIdAndWeekStartLessThanOrderByWeekStartDesc(owner,monday).map(ReportingWeek::getEndsAt).orElse(null);
+        Instant nextStart=weeks.findFirstByOwnerIdAndWeekStartGreaterThanOrderByWeekStartAsc(owner,monday).map(ReportingWeek::getStartsAt).orElse(null);
+        if(previousEnd!=null && previousEnd.isAfter(start)) start=previousEnd;
+        if(nextStart!=null && nextStart.isBefore(end)) end=nextStart;
+        if(!end.isAfter(start)) throw new ApiException(409,"Reporting week conflicts with an existing frozen week.");
+        return Optional.of(new WeekWindow(null,monday,zone.getId(),start,end));
+    }
+    public Optional<WeekWindow> readCurrent(UUID owner,Instant at) {
+        LocalDate utcMonday=monday(LocalDate.ofInstant(at,ZoneOffset.UTC));
+        WeekWindow result=null;
+        // Every IANA local week at this instant is one of these three Monday labels.
+        for(int offset=-1;offset<=1;offset++) {
+            var candidate=readWeek(owner,utcMonday.plusWeeks(offset));
+            if(candidate.isPresent() && !at.isBefore(candidate.get().startsAt()) && at.isBefore(candidate.get().endsAt())) {
+                if(result!=null) throw new ApiException(409,"Reporting calendar contains overlapping weeks.");
+                result=candidate.get();
+            }
+        }
+        return Optional.ofNullable(result);
+    }
+    public Optional<DayWindow> readDay(WeekWindow week,LocalDate date) {
+        ZoneId zone=ZoneId.of(week.timezone());
+        Instant start=date.atStartOfDay(zone).toInstant(),end=date.plusDays(1).atStartOfDay(zone).toInstant();
+        if(start.isBefore(week.startsAt())) start=week.startsAt();
+        if(end.isAfter(week.endsAt())) end=week.endsAt();
+        return end.isAfter(start) ? Optional.of(new DayWindow(week,date,start,end)) : Optional.empty();
+    }
     private WeekWindow window(LocalDate monday,String timezone,List<ReportingWeek> stored,
             List<ReportingTimezoneRevision> policies) {
         ZoneId zone=ZoneId.of(timezone);

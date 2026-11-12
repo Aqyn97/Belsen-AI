@@ -10,7 +10,7 @@ Each day has one main work package. Integrate small frontend slices from Day 3 o
 | 2 | November 1 | Runtime and authentication | Stage B/C implemented; live Google verification pending |
 | 3 | November 2 | Goals and tasks | Backend implemented and committed; browser slice remains planned |
 | 4 | November 3 | Habits | B1/B2 backend implemented November 4; browser slice remains planned |
-| 5 | November 4 | Analytics | Planned |
+| 5 | November 4 | Analytics | B1 API implemented November 5; immutable finalization remains planned |
 | 6 | November 5 | Frontend integration | Planned |
 | 7 | November 6 | AI coaching and release | Planned |
 
@@ -99,6 +99,12 @@ Acceptance criteria:
 - Tests cover cutoff boundaries, reopened/rescheduled tasks, schedule changes and daylight-saving behavior.
 
 Dependencies: goals, tasks and habits with the required history. This is a correctness gate, not merely a dashboard styling task.
+
+### Day 5 B1 checkpoint
+
+Implemented the authenticated dashboard GET endpoint with original-cohort task counts, strict daily habit consistency and paginated explicit weekly goal progress. All metrics share one exclusive cutoff and one read-only REPEATABLE READ snapshot. Owner isolation, no-data states, frozen/policy-derived calendar context and current-metadata labels are explicit. No reads create reporting weeks or occurrences. Closed weeks are CLOSED_UNFINALIZED; the immutable-snapshot acceptance criterion above remains pending. No new migration, finalization table, frontend, AI or dependency was added.
+
+Verified November 5, 2026: Maven verify passed **231 tests** (50 unit, 181 PostgreSQL integration), zero failures/errors/skips. All 182 baseline cases remain; 8 rule and 41 dashboard integration tests were added. Tests cover source-event ordering, task cohorts, rest and schedule reconstruction, cutoff/void boundaries, aggregate precision, current previews, timezone/DST transitions, owner isolation, real JDBC isolation, concurrent commits and late unfinalized changes. Native metric query count stayed constant on a larger isolated fixture; V1–V5 and Hibernate validation passed. Immutable finalization remains unimplemented.
 
 ## Day 6: frontend integration
 

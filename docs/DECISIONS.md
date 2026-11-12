@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Other product behavior remains planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
+The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Subsequent decisions record implemented goals, tasks, habits and the dashboard API; immutable report finalization, frontend and coaching remain planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
 
 ## D01: modular monolith with feature packages
 
@@ -154,4 +154,15 @@ Effective dates and acceptance times are independent. Filter schedules by accept
 
 Capture one post-lock acceptance instant at PostgreSQL microsecond precision, including initial tracking. Explicit history cutoffs are exclusive and handle sub-microsecond bounds exactly; default history includes equal-timestamp current committed actions. Use cutoff-filtered events instead of current flags, and omit not-yet-started day context in explicit historical responses to avoid showing later timezone intentions. Return current version tokens separately from historical meaning. REPEATABLE READ responses, bounded date ranges and independent pages keep reconstruction consistent without read-side writes.
 
-No schema, dependency, login, OIDC or session changes were needed. Internal strict consistency rules are tested; dashboards, frontend and coaching remain planned. Account serialization, bounded per-date queries, future-reservation timezone conflicts and committed-snapshot freshness are deliberate MVP limitations. Existing B1 coverage of deny-by-default was moved from the newly authorized habit POST route to an unsupported maintenance route; its security assertion remains intact.
+No schema, dependency, login, OIDC or session changes were needed. At the B2 checkpoint, strict consistency rules were internal and the dashboard API was planned; D19 records its implementation. Frontend and coaching remain planned. Account serialization, bounded per-date queries, future-reservation timezone conflicts and committed-snapshot freshness are deliberate MVP limitations. Existing B1 coverage of deny-by-default was moved from the newly authorized habit POST route to an unsupported maintenance route; its security assertion remains intact.
+
+
+## D19: coherent dashboard projections without finalization
+
+**Implemented in Day 5 B1.** Add one authenticated, no-store dashboard GET with one exclusive cutoff and one read-only REPEATABLE READ transaction. Dedicated owner-scoped JDBC projections join that transaction through MANDATORY propagation. Do not reuse resource GET services with REQUIRES_NEW or run one habit history request per habit.
+
+Task counts use original due-week membership present in the last event before cutoff. Habit counts group fully completed eligible days after effective-schedule and rest reconstruction; missing occurrences still imply potential obligations. Goal units use cutoff-aware creation/void predicates and existing weekly targets, with current metadata clearly identified. Native sums retain aggregate precision, and percentages remain Java calculations. One week, at most seven day aggregates and bounded stable goal pages keep responses small.
+
+Extend the shared calendar with bounded exact/adjacent/policy lookups rather than a second calendar architecture. Never write during dashboard reads. New-account current previews are explicitly UNFROZEN; unavailable history and calendar gaps do not use fabricated timezones. Default requests exactly at a week opening are valid; explicit cutoffs must be inside the elapsed period.
+
+Closed results remain CLOSED_UNFINALIZED. REPEATABLE READ prevents mixed commits within one response but cannot prevent a later commit accepted before week-end from changing a subsequent report. No finalization table, snapshot write or new migration is authorized here. Immutable finalization and goal-creation writer coordination remain future work. Other tradeoffs are independent snapshots across pages, current metadata labels, and query cost proportional to relevant records. Query-plan evidence did not justify additional indexes or dependencies.

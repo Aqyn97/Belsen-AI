@@ -46,7 +46,16 @@ public final class HabitRules {
             if(!keys.add(row.habitId()+"/"+row.date())) throw new ApiException(400,"Duplicate habit/date evidence.");
             if(row.started() && row.scheduled() && !row.restPlanned()) days.computeIfAbsent(row.date(),d -> new ArrayList<>()).add(row);
         }
-        int eligible=days.size(),successful=(int)days.values().stream().filter(day -> day.stream().allMatch(Obligation::completed)).count();
+        return consistencyFromDays(days.entrySet().stream().map(day -> new DailyTotals(day.getKey(),day.getValue().size(),day.getValue().stream().filter(Obligation::completed).count())).toList());
+    }
+    public record DailyTotals(LocalDate date,long remaining,long completed) { }
+    public static HabitDtos.Consistency consistencyFromDays(List<DailyTotals> days) {
+        if(days.size()>10000) throw new ApiException(400,"Consistency input is too large.");
+        var dates=new HashSet<LocalDate>();int eligible=0,successful=0;
+        for(var day:days) {
+            if(!dates.add(day.date()) || day.remaining()<0 || day.completed()<0 || day.completed()>day.remaining()) throw new ApiException(400,"Invalid daily consistency counts.");
+            if(day.remaining()>0) { eligible++;if(day.completed()==day.remaining()) successful++; }
+        }
         return new HabitDtos.Consistency(successful,eligible,eligible==0 ? null : BigDecimal.valueOf(successful).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(eligible),1,RoundingMode.HALF_UP),eligible==0 ? "NO_SCHEDULED_ACTIVITY" : null);
     }
 }

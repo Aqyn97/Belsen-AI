@@ -61,6 +61,7 @@ public class SecurityConfig {
             authorize.requestMatchers(HttpMethod.PATCH,"/api/v1/habits/{id}").authenticated();
             authorize.requestMatchers(HttpMethod.PUT,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
             authorize.requestMatchers(HttpMethod.DELETE,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
+            authorize.requestMatchers(HttpMethod.GET,"/api/v1/analytics/dashboard").authenticated();
             if (googleEnabled) {
                 authorize.requestMatchers("/oauth2/authorization/google", "/login/oauth2/code/google").permitAll();
             }

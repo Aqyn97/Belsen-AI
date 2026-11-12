@@ -4,7 +4,7 @@
 
 Belsen-AI helps people plan daily actions and understand whether they are staying consistent. Its tagline is “Plan better. Stay consistent. Grow.” The product is a web application for people seeking simple personal organization, including those unfamiliar with productivity tools.
 
-The first MVP is targeted for November 6, 2026. The authentication, goals, tasks and habit backends are implemented. The web interface, public analytics and coaching remain planned; Google browser login and deployment remain unverified. The table below describes the target MVP.
+The first MVP is targeted for November 6, 2026. The authentication, goals, tasks and habit backends are implemented. The authenticated analytics dashboard API is also implemented. The web interface, immutable closed-report finalization and coaching remain planned; Google browser login and deployment remain unverified. The table below describes the target MVP.
 
 ## Primary journey
 
@@ -51,7 +51,7 @@ Weekly goal progress is **completed weekly target units ÷ planned weekly target
 
 Weeks run from Monday 00:00 to the following Monday 00:00, exclusive, in the reporting timezone. The current week's cutoff is the current instant; closed weeks use their ending boundary. Future habit days in the current week are excluded until they start; today's result remains provisional.
 
-If a denominator is zero, display “No scheduled activity” or “No weekly target” with no percentage. A new user should receive guidance to create an activity, not a fabricated score. Archive actions preserve historical reports. Closed weeks retain their timezone and results; timezone changes apply prospectively as defined in the architecture.
+If a denominator is zero, display “No scheduled activity” or “No weekly target” with no percentage. A new user should receive guidance to create an activity, not a fabricated score. Archive actions preserve historical reports. Frozen weeks retain their reporting timezone; timezone changes apply prospectively as defined in the architecture. Immutable closed results remain a finalization-stage goal. The current dashboard labels closed periods CLOSED_UNFINALIZED because late commits may still change them.
 
 ## AI coaching boundaries
 

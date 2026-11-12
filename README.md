@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 4 backend: goals, tasks and habits.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
+**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
 
 | Area | Status |
 | --- | --- |
@@ -19,8 +19,9 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Goals, progress entries and weekly targets | Implemented; goals-stage verification below |
 | Tasks and append-only history | Implemented; task-stage verification below |
 | Habit routines, rest and historical check-ins | Implemented; PostgreSQL/HTTP tests |
-| Strict consistency calculation | Internal rules tested; public analytics remains planned |
-| Weekly analytics | Planned |
+| Strict habit consistency | Implemented in authenticated dashboard; frontend planned |
+| Analytics dashboard API | Implemented; one read-only snapshot and historical cutoff |
+| Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
 | Web interface, CI and deployment | Planned |
@@ -130,7 +131,7 @@ The first progress or weekly-plan write freezes the account's current reporting 
 
 Archived goals retain history but reject changes. Identical progress retries still return their original entry, including its void state. Units cannot change after entries or plans exist; changing the lifetime target recalculates only the lifetime percentage. Stale versions return `409`.
 
-**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks were subsequently implemented in Stage C and habits in Day 4 B2; dashboards, AI and frontend remain unimplemented.
+**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks were subsequently implemented in Stage C and habits in Day 4 B2; the dashboard API was subsequently added in Day 5; AI and frontend remain unimplemented.
 
 ## Tasks API (Day 3, Stage C)
 
@@ -188,11 +189,45 @@ Consistency rules are internal and tested: one day succeeds only when all its re
 
 **Verified November 4, 2026:** Maven `verify` passed **182 tests**: 42 unit and 140 PostgreSQL integration tests, zero failures/errors/skips. This preserves the 138-test B1 baseline and adds 9 rule tests plus 35 habit HTTP/integration tests. Flyway V1–V5 and Hibernate validation passed.
 
+## Analytics dashboard API (Day 5, Stage B1)
+
+`GET /api/v1/analytics/dashboard` requires the existing session and returns `Cache-Control: no-store`. No frontend dashboard is implemented. The endpoint never creates reporting weeks, occurrences or finalized snapshots.
+
+| Parameter | Contract |
+| --- | --- |
+| `weekStart` | Optional ISO Monday, years 1900–9998; defaults to the current reporting week |
+| `cutoff` | Optional ISO instant; requires weekStart and must be after period start, at or before period end, and not in the future |
+| `goalsPage` | Default 0; nonnegative |
+| `goalsSize` | Default 20; 1–100 |
+
+Unknown, repeated or blank parameters are rejected with `400`, including owner IDs and timezone overrides. Unavailable historical periods return `404`; invalid calendar data or a current calendar gap returns `409`. Only an account with no calendar history can receive an explicitly `UNFROZEN` current-week preview from its profile timezone. Existing frozen periods and stored reporting policy always take precedence.
+
+The response contains:
+
+- `period`: weekStart, timezone, startsAt, endsAt, cutoff, cutoffExclusive, calendarStatus, reportStatus and calculationVersion.
+- `tasks`: scheduled, completed, incomplete, percentage and reason.
+- `habits`: eligibleDays, successfulDays, percentage and reason.
+- `goals`: paginated items, page, size, totalElements and reason. Items include goalId, title, titleMetadata=`CURRENT`, unit, completedUnits, plannedUnits, percentage and reason.
+
+Task completion divides tasks complete at cutoff by their original due-week cohort. First due assignment must exist before cutoff. Future due dates within that week count once assigned. Rescheduling, removing the current date and archive never remove obligations; reopening changes the reconstructed completion state. Zero tasks returns a null percentage and `NO_SCHEDULED_TASKS`.
+
+Habit consistency counts fully successful eligible days, not individual checkmarks. Only started, valid reporting-day intervals count. Reconstruct effective schedules and last completion/rest events before cutoff; absent occurrences can still be incomplete obligations. Habit-specific rest removes only that habit. Zero eligible days returns null with `NO_SCHEDULED_ACTIVITY`.
+
+Weekly goals use explicit entries created before cutoff and not voided before it. A void exactly at cutoff has not taken effect. A plan must exist before cutoff; missing targets return actual units, null plannedUnits/percentage and `NO_WEEKLY_TARGET`. Percentages cap at 100 while units remain uncapped. Include goals active at cutoff and relevant archived goals with weekly plan/activity; exclude later-created goals. Empty collections use `NO_GOALS`. Goal titles are current metadata, not historical titles. Units also come from the current goal row; they become fixed once planning/progress exists, but earlier metadata versions are not reconstructed.
+
+One exclusive cutoff applies to all three metrics. Open weeks default to the captured current instant; closed weeks default to their end. A default request exactly at week start is valid with no elapsed habit day; an explicit cutoff must be after start. Microsecond-aware SQL bounds preserve exclusive semantics for sub-microsecond requests. Decimal numeric literals are emitted from BigDecimal without narrowing; exact large values require decimal-capable client parsing.
+
+`calendarStatus` is `FROZEN` for stored weeks, `RECONSTRUCTED` for policy-derived intervals, or `UNFROZEN` for a new-account preview. `reportStatus` is `PROVISIONAL` while the week is open and `CLOSED_UNFINALIZED` afterward. There is no FINALIZED state in this implementation. A transaction accepted before week-end can commit later and change a closed unfinalized result. Current labels can also change. One response uses one PostgreSQL REPEATABLE READ snapshot; separate requests/pages do not share a pinned snapshot.
+
+Missing pre-baseline timezone history is never fabricated. A pre-habit account with older frozen weeks but no policy/current reservation can receive a current-calendar conflict until an ordinary authorized activity reserves the current week. Shared calendar gaps and conflicting future reservations retain their existing behavior. Immutable closed-week finalization remains a separate future stage; there is no V6.
+
+**Verified November 5, 2026:** full Maven `verify` passed **231 tests** (50 unit, 181 PostgreSQL integration), zero failures/errors/skips. All 182 baseline cases remain, plus 8 analytics-rule tests and 41 dashboard integration tests. Flyway V1–V5 and Hibernate validation passed. No migrations or dependencies changed.
+
 ## Current limitations
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-No frontend, account linking, password reset, email verification, analytics, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
+No frontend, account linking, password reset, email verification, immutable report finalization, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
 
 ## Documentation
 
