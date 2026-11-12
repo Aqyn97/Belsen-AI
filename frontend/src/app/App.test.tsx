@@ -1,0 +1,12 @@
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { expect, it, vi } from 'vitest';
+import { App } from './App';
+import { createQueryClient } from './providers';
+const show = (path: string) => render(<QueryClientProvider client={createQueryClient()}><MemoryRouter initialEntries={[path]}><App/></MemoryRouter></QueryClientProvider>);
+it('starts with an honest public entry', () => { show('/'); expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Make room'); expect(screen.getByText(/product workflows are not implemented/)).toBeVisible(); });
+it('renders an accessible not-found route', () => { show('/missing'); expect(screen.getByRole('heading',{level:1})).toHaveTextContent('out of the plan'); expect(screen.getByRole('link',{name:'Return home'})).toBeVisible(); });
+it('does not invent authentication', async () => { vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('{}',{status:401}))); show('/app/tasks'); expect(await screen.findByRole('heading',{name:'Your next chapter'})).toBeVisible(); vi.unstubAllGlobals(); });
+it.each(['dashboard','goals','tasks','habits','analytics','settings'])('renders gated %s only after real session check', async path => { vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('{"id":"user","email":"a@example.test","displayName":"Test","timezone":"UTC"}'))); show(`/app/${path}`); expect(await screen.findByRole('navigation',{name:'Workspace'})).toBeVisible(); expect(screen.getByText(/workflow is not implemented/)).toBeVisible(); expect(screen.getByRole('link',{name:new RegExp(`^${path}$`,'i')})).toHaveAttribute('aria-current','page'); vi.unstubAllGlobals(); });
+it('keeps network failures gated and recoverable', async () => { vi.stubGlobal('fetch',vi.fn().mockRejectedValue(new Error('offline'))); show('/app/goals'); expect(await screen.findByRole('alert')).toHaveTextContent('could not verify'); expect(screen.queryByRole('navigation')).not.toBeInTheDocument(); vi.unstubAllGlobals(); });

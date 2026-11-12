@@ -11,7 +11,7 @@ Each day has one main work package. Integrate small frontend slices from Day 3 o
 | 3 | November 2 | Goals and tasks | Backend implemented and committed; browser slice remains planned |
 | 4 | November 3 | Habits | B1/B2 backend implemented November 4; browser slice remains planned |
 | 5 | November 4 | Analytics | B1 API implemented November 5; immutable finalization remains planned |
-| 6 | November 5 | Frontend integration | Planned |
+| 6 | November 5 | Frontend integration | B1 foundation implemented November 12; complete workflows and production integration planned |
 | 7 | November 6 | AI coaching and release | Planned |
 
 ## Day 1: architecture and foundation
@@ -118,6 +118,12 @@ Acceptance criteria:
 - React assets can be served by Spring Boot without swallowing API errors in SPA fallback.
 
 Dependencies: stable enough API contracts and incremental browser integration from earlier days. Resolve deployment packaging now, not at the end of Day 7.
+
+### Day 6 B1 checkpoint
+
+Implemented the frontend foundation only: strict React/TypeScript tooling, pinned dependencies/lockfile, relative fetch/CSRF client, exact-number codec, shared UI styles/components, public placeholders and a real-session-gated responsive shell. No authentication forms or product workflows are complete. Backend source/configuration remain unchanged. OAuth redirect changes, production SPA delivery and all subsequent frontend feature slices require separate approval. The November 6 target is an unmet historical target, not a release claim.
+
+Verified November 12, 2026: typecheck, ESLint, 42 frontend tests, production build and 8 mocked-session Chromium smoke tests passed. Both dependency audits are clean. All 231 backend tests still pass; source/configuration and V1–V5 are unchanged. Real backend/browser authentication, production SPA packaging and complete product workflows remain unverified/unimplemented.
 
 ## Day 7: coaching and release
 

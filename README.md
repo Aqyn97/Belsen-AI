@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The web interface remains planned.
+**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The frontend foundation exists; authentication forms and product workflows remain planned.
 
 | Area | Status |
 | --- | --- |
@@ -24,7 +24,8 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
-| Web interface, CI and deployment | Planned |
+| React frontend foundation | Shell, session gate and API/CSRF client implemented; workflows planned |
+| CI and deployment | Planned |
 
 The target for the first working MVP is **November 6, 2026**. The roadmap describes acceptance criteria; it is not a claim that those criteria have been met.
 
@@ -227,7 +228,7 @@ Missing pre-baseline timezone history is never fabricated. A pre-habit account w
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-No frontend, account linking, password reset, email verification, immutable report finalization, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
+No complete frontend workflows, account linking, password reset, email verification, immutable report finalization, AI coaching, CI or public deployment exists yet. Cookie flags are verified over HTTP with a browser-style cookie jar; no visual browser automation was used.
 
 ## Documentation
 
@@ -238,3 +239,38 @@ No frontend, account linking, password reset, email verification, immutable repo
 - [Contributing](CONTRIBUTING.md): development and manual Git workflow.
 
 The display identity is **belsen.** Primary yellow `#FACC15`, background `#FAFAF7`, dark text `#171717`, and white surfaces `#FFFFFF` define the planned visual direction. No interface has been implemented.
+
+
+## Frontend foundation (Day 6 B1)
+
+The React/TypeScript shell is implemented in `frontend/`. It includes public home/authentication placeholders, protected `/app/*` placeholders, responsive navigation, shared styles/components, exact JSON handling and an API client. It does not implement login forms or goals/tasks/habits/analytics workflows. AI Coach remains planned. Protected routes call the real `/api/v1/me`; anonymous users are routed to the authentication placeholder, and network failures stay gated.
+
+Requires Node 24.x (the toolchain was checked with Node 24.22.1) and npm. Exact compatible dependency versions are recorded in package.json and package-lock.json. TypeScript 6 is pinned because the selected TypeScript ESLint integration does not support TypeScript 7.
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. Start Spring Boot separately using the existing local-profile instructions. Vite proxies `/api`, `/oauth2` and `/login/oauth2` to `http://127.0.0.1:8081`, preserving the browser host. Optional shell variable `BELSEN_DEV_BACKEND` changes only the development proxy target. It is not a production API URL. Keep the browser hostname `localhost` consistent. No CORS or production cookie settings were weakened.
+
+Google redirects remain unchanged: success still lands on backend JSON. Do not treat Google browser integration as complete or start its flow through Vite without coordinating the registered callback. A later authentication stage must implement forms, fixed SPA redirects, session transitions and real-provider browser verification. No OAuth secrets belong in Vite variables.
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npx playwright install chromium
+npm run e2e
+npm audit --omit=dev
+```
+
+The smoke tests serve the built bundle with Vite preview and mock only the session API for isolated shell coverage. They are not backend end-to-end verification. Browser screenshots, results, dist and node_modules are ignored. Spring Boot production asset packaging and SPA/security fallback are not implemented in B1; `npm run build` produces standalone assets only.
+
+The API client uses relative `/api/v1` URLs, same-origin cookies and no redirects or automatic mutation retries. CSRF bootstrap is shared in memory, uses the server-provided header name, and never reads HttpOnly cookies or localStorage. The next authentication implementation must call `api.afterAuthentication()` after a successful login/registration/OIDC transition and `api.clear()` on logout. Older requests/bootstrap responses cannot restore obsolete token state. Error objects expose safe HTTP status/Problem Details and Retry-After; 403/409 do not trigger blind mutation replays. The caller's AbortSignal prevents cancelled mutations from being sent.
+
+Lossless JSON preserves decimal values and long versions. Editable quantities stay strings, are validated without rounding, and become explicit exact tokens on serialization. Unsafe native numbers and native fractional numbers are rejected at the request boundary. Server metrics are not calculated in React.
+
+Verified November 12, 2026: frontend typecheck, ESLint, 42 Vitest unit/component tests, production build and 8 Chromium desktop/mobile smoke tests passed. Smoke tests use mocked session responses and check 320/375/390/768px layouts; they do not establish live backend browser integration. Backend Maven verify retained all 231 passing tests (50 unit, 181 PostgreSQL integration), zero failures/errors/skips. Production and full dependency audits report zero vulnerabilities. The lockfile overrides the development-only minimatch dependency to 11.0.1 to resolve its amplification advisory; lint, unit and browser checks passed with that version. Production assets are about 97 KB gzip JavaScript and 1.7 KB gzip CSS.
