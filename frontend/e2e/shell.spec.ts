@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/me', route => route.fulfill({status:401,json:{}}));
   await page.route('**/api/v1/auth/csrf', route => route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'smoke-token' } }));
 });
 test('public shell is honest, keyboard-accessible and fits the viewport', async ({ page }, info) => {

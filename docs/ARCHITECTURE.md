@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2; immutable finalization, coach, product frontend workflows and deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2 and goals/tasks in B3; immutable finalization, coach, habit/analytics interfaces and deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -371,3 +371,32 @@ The session query reconciles on focus, removes old-owner data when identity chan
 Google still uses Spring Security state/nonce validation and provider-subject association. Only redirect handlers changed on the backend. Production Secure/HttpOnly/SameSite=Lax cookies, local HTTP exception, CSRF rules, JDBC persistence and deny-by-default remain unchanged. No new API, migration, forwarded-header trust or dependency was introduced. The public Google build flag must match backend enablement. Register localhost:5173/login/oauth2/code/google for the documented Vite journey. Production asset packaging and exact SPA delivery remain deferred; standalone backend requests do not serve frontend pages.
 
 Isolated mocks cover errors/races. A separate Chromium suite reaches the actual packaged backend and disposable PostgreSQL, checking registration/login, rotation, CSRF rejection, profile persistence, logout, deep links and two-account isolation on desktop/mobile. The fixture copies the verified JAR to temporary storage and owns only its random container and loopback ports. Live Google and production HTTPS browser behavior are not established by these tests.
+
+
+## Day 6 B3: goals and task workflows
+
+React implements goal CRUD/archive, explicit progress/history/voids, weekly planning and task CRUD/actions/filtering through the existing APIs. Production never uses fixtures or local-only records. The existing shared API client, TanStack Query, native forms/dialogs and exact JSON codec suffice; no dependencies, infrastructure, migrations or backend behavior changed.
+
+### Verified contract inventory
+
+| Resource | Existing contract used by React |
+| --- | --- |
+| Goals | GET/POST `/goals`, GET/PATCH `/{id}`, POST `/{id}/archive`; edit/archive use returned goal version |
+| Progress | POST/GET `/goals/{id}/progress`, POST `/{entryId}/void`; recording uses UUID + exact quantity + effectiveDate, not goal version |
+| Plans | PUT `/goals/{id}/weekly-plans/{Monday}`; omit version on first creation, use the returned plan token on updates |
+| Tasks | GET/POST `/tasks`, GET/PATCH `/{id}`, POST `/{id}/complete`, `/reopen`, `/reschedule`, `/archive`; each mutation uses returned task version |
+| Filters | Active or archived selection; optional OPEN/COMPLETED, owned goal, exact current due date **or** inclusive from/to; bounded page/size |
+| Reporting context | GET `/analytics/dashboard?goalsSize=1`; decode only period metadata, never derive authoritative metrics in React |
+
+Paths are under `/api/v1`. Owner identity comes from the authenticated session. Request bodies never contain an owner ID. Private query keys begin with feature and account ID; query functions pass AbortSignal. Mutations synchronously reject duplicate operations, cancel prior product reads, accept authoritative responses and invalidate relevant goal/task/reporting/dashboard/analytics queries. Version comparison prevents an older mutation result replacing a newer cached entity. Query cancellation plus post-mutation refetch prevents stale reads replacing accepted results. No automatic mutation retries or optimistic completion are used.
+
+Drafts retain their base version through a conflict. Refetched details show current metadata, dates, state and totals; a user must explicitly choose to retain the draft with the new token or replace it. Goal and plan tokens are never interchangeable. Current-week first plans are allowed; an existing started plan is fixed. Server context failures pause date-based writes, and calendar context is timestamped rather than represented as a continuously advancing browser clock.
+
+Quantities and versions remain exact lexemes; only bounded pagination/duration values become safe integers. Total counts remain exact strings/BigInt for pagination. Date-only values remain ISO strings, with UTC civil arithmetic solely for Monday validation; server instants/timezones drive reporting-date defaults, including DST. Java owns totals, percentages, open-week validation and history.
+
+Progress retry state contains the frozen submission UUID and exact payload in the private query cache. It survives component navigation, not reload/logout, and is never placed in browser storage. Network/5xx uncertainty permits only identical retries; conflicting reuse requires reviewing history before explicitly starting another entry. Rejected or late responses cannot recreate retry state after an account switch. Voids retain history; replacements are a separate request. A synchronous pre-allocation guard prevents two same-cycle submits from replacing the retained UUID.
+
+Native dialogs provide focus trapping, Escape cancellation and focus restoration; focus moves to the detail heading if archive removes the trigger. Accessible labels, inline errors/summaries, responsive lists, background-refresh feedback and visible focus retain the existing design. Browser suites test desktop/mobile, keyboard controls, account isolation and real two-context conflicts. Local mock fixtures are restricted to isolated tests. Existing plan arrays are not paginated by the backend; their growth remains a documented API limitation.
+
+
+B3 verification on November 15, 2026 passed 132 frontend tests (58 added to B2), 8 mocked shell tests, 12 actual PostgreSQL/Spring Boot Chromium cases and all 231 backend tests, plus typecheck, lint and build. Both npm audits were clean. Review corrections lock units during unknown progress outcomes, reject duplicate submits before UUID allocation, retain account isolation in late handlers, avoid false claims of fresh metrics after refresh errors and distinguish an optional goal filter from an unassigned-only filter (which the API does not provide). No unresolved critical/high/medium findings remained in scope. Live Google, full assistive-technology/cross-browser verification and production delivery remain separate gates.

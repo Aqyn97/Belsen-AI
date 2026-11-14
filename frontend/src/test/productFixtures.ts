@@ -1,0 +1,14 @@
+import { exact, stringifyExact } from '../shared/lib/numbers';
+export const owner='11111111-1111-4111-8111-111111111111';
+export const goalId='22222222-2222-4222-8222-222222222222';
+export const taskId='33333333-3333-4333-8333-333333333333';
+export const entryId='44444444-4444-4444-8444-444444444444';
+export const weekFixture={weekStart:'2026-11-09',timezone:'America/New_York',startsAt:'2026-11-09T05:00:00Z',endsAt:'2026-11-16T05:00:00Z'};
+export const periodFixture={...weekFixture,cutoff:'2026-11-15T18:00:00Z',calendarStatus:'FROZEN'};
+export const profileFixture={id:owner,email:'owner@example.test',displayName:'Owner',timezone:'Asia/Almaty'};
+export const planFixture=()=>({id:'55555555-5555-4555-8555-555555555555',reportingWeek:{weekStart:'2026-11-16',timezone:'America/New_York',startsAt:'2026-11-16T05:00:00Z',endsAt:'2026-11-23T05:00:00Z'},plannedUnits:exact('20.0000'),completedUnits:exact('0.0000'),weeklyPercent:exact('0.0'),version:exact('9007199254740995')});
+export const goalFixture=()=>({id:goalId,title:'Read thoughtfully',description:'A few pages every day.' as string|null,target:exact('999999999999999.9999'),unit:'pages',startDate:null as string|null,deadline:null as string|null,status:'ACTIVE',archivedAt:null as string|null,version:exact('9007199254740993'),lifetimeUnits:exact('12.3456'),lifetimePercent:exact('0.0'),weeklyPlans:[] as ReturnType<typeof planFixture>[]});
+export const entryFixture=()=>({id:entryId,submissionId:'66666666-6666-4666-8666-666666666666',quantity:exact('12.3456'),effectiveDate:'2026-11-15',createdAt:'2026-11-15T17:00:00Z',voidedAt:null as string|null,reportingWeek:weekFixture});
+export const taskFixture=()=>({id:taskId,title:'Read a chapter',description:'Keep a note.' as string|null,goalId:goalId as string|null,originalDueDate:'2026-11-15' as string|null,currentDueDate:'2026-11-15' as string|null,originalReportingWeek:weekFixture,estimatedDurationMinutes:25 as number|null,status:'OPEN',completedAt:null as string|null,archivedAt:null as string|null,createdAt:'2026-11-15T15:00:00Z',updatedAt:'2026-11-15T15:00:00Z',version:exact('9007199254740993'),eventSequence:exact('2')});
+export const jsonResponse=(value:unknown,status=200)=>new Response(stringifyExact(value),{status,headers:{'Content-Type':'application/json'}});
+export const pageFixture=(items:unknown[],page=0,size=20,totalElements=items.length)=>({items,page,size,totalElements});

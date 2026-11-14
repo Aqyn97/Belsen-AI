@@ -1,0 +1,13 @@
+import { expect, it } from 'vitest';
+import { QueryClient } from '@tanstack/react-query';
+import { parseExact, stringifyExact, exact } from '../lib/numbers';
+import { entry, goal, pageOf, task, period } from './contracts';
+import { entityKey, putEntity } from './data';
+import { goalFixture, taskFixture, entryFixture, periodFixture } from '../../test/productFixtures';
+it('keeps all decimal and version digits from real JSON numeric literals',()=>{const value=goal(parseExact(stringifyExact(goalFixture())));expect(value.target).toBe('999999999999999.9999');expect(value.version).toBe('9007199254740993');expect(value.lifetimeUnits).toBe('12.3456');});
+it('rejects unsafe/narrowed numeric contract values',()=>{expect(()=>goal({...goalFixture(),target:1.1})).toThrow();expect(()=>goal({...goalFixture(),version:exact('9223372036854775808')})).toThrow();});
+it('decodes tasks with distinct current and original dates',()=>{const value=task(parseExact(stringifyExact({...taskFixture(),currentDueDate:'2026-11-17'})));expect(value.originalDueDate).toBe('2026-11-15');expect(value.currentDueDate).toBe('2026-11-17');expect(value.version).toBe('9007199254740993');});
+it('retains void timestamps and stored reporting timezone',()=>{const value=entry({...entryFixture(),voidedAt:'2026-11-15T18:00:00Z'});expect(value.voidedAt).toBeTruthy();expect(value.reportingWeek.timezone).toBe('America/New_York');});
+it('validates bounded pagination without narrowing total counts',()=>{const page=pageOf(goal)(parseExact('{"items":[],"page":2,"size":20,"totalElements":9007199254740993}'));expect(page.totalElements).toBe('9007199254740993');expect(page.page).toBe(2);expect(()=>pageOf(goal)(parseExact('{"items":[],"page":-1,"size":20,"totalElements":0}'))).toThrow();});
+it('only extracts server reporting metadata, not dashboard metrics',()=>expect(period({period:periodFixture})).toEqual(periodFixture));
+it('never overwrites a newer successful entity with an older mutation result',()=>{const client=new QueryClient();const newer=goal({...goalFixture(),title:'Newer',version:exact('9007199254740994')});putEntity(client,'goals','owner',newer);putEntity(client,'goals','owner',goal(goalFixture()));expect(client.getQueryData(entityKey('goals','owner',newer.id))).toEqual(newer);});

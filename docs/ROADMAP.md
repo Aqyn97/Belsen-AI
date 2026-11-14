@@ -131,6 +131,24 @@ Implemented account interfaces only: email/password registration/login, session 
 
 Acceptance evidence, November 14, 2026: strict typecheck, ESLint, 74 frontend unit/component tests, production build, 8 mocked-session Chromium smoke tests and 6 real-backend Chromium desktop/mobile tests passed. All 231 backend tests passed (50 unit, 181 PostgreSQL integration), zero failures/errors/skips, with V1–V5 and Hibernate validation. Both npm advisory audits reported zero vulnerabilities. Real-browser tests verified session rotation, stale-CSRF rejection, persisted settings, reloads, password login/logout and two-account isolation against disposable PostgreSQL. Keyboard, responsive overflow, focus/error labels and desktop/mobile screenshots were reviewed. This does not establish live Google or production HTTPS readiness.
 
+### Day 6 B3 checkpoint
+
+Goals and Tasks now replace their placeholders with real backend workflows. Accounts remain unchanged; habits, analytics, AI Coach and deployment are not part of this slice.
+
+Acceptance criteria:
+
+- Goals list/details/create/edit/archive work with exact values and returned versions; paginated history, explicit UUID-based progress and auditable voids preserve server reporting rules.
+- Current-week first targets can be created; existing started plans stay fixed, and future edits use a distinct plan token.
+- Tasks support owned goal association, metadata edits, completion/reopening, rescheduling/date removal, archival, filters and pagination. Original due dates remain visible.
+- Uncertain progress retries reuse the frozen UUID/payload; same-cycle submits cannot replace that key. Reload/logout limitations are explicit.
+- Goal, plan and task conflicts across real browser contexts preserve drafts, fetch latest state and require explicit user review without automatic replay.
+- Real PostgreSQL/Spring Boot desktop/mobile tests cover the full workflows, response-loss fault injection, persisted reloads, cross-account rejection and keyboard confirmations; mocked smoke tests remain separately identified.
+- Typecheck, lint, all frontend/backend tests, production build, npm audits and Git/credential/artifact checks pass before publication.
+
+Verified November 15, 2026: 132 frontend tests, 8 mocked smoke tests and 12 real-backend Chromium tests passed, with all 231 backend tests passing and zero failures/skips. Typecheck, ESLint, production build, both npm audits, whitespace/credential/generated-file checks and isolated-fixture cleanup passed. Review regressions cover same-cycle UUID replacement, late account-switch responses, stale reads, unavailable reporting context, uncertain-unit edits, refresh failure messaging and filter semantics. No backend or dependency changes were needed.
+
+The next frontend slice may implement habits and analytics after separate approval. B3 does not start it. Production delivery, live Google verification and coaching remain open release gates. Goal plan arrays and memory-only retry intents retain their documented limitations.
+
 ## Day 7: coaching and release
 
 Acceptance criteria:

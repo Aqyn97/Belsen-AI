@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports registration, password login, session restoration, logout and account settings. Goals, tasks, habits and analytics interfaces remain planned.
+**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports accounts, goals, explicit progress/weekly plans and task workflows. Habit and analytics interfaces remain planned.
 
 | Area | Status |
 | --- | --- |
@@ -24,7 +24,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
-| React account interface | Registration, login, logout and settings implemented; product interfaces planned |
+| React frontend | Accounts, goals/progress/plans and tasks implemented; habits/analytics interfaces planned |
 | CI and deployment | Planned |
 
 The original target for the first working MVP was **November 6, 2026**; it remains an unmet historical target. The roadmap describes acceptance criteria; it is not a claim that those criteria have been met.
@@ -132,7 +132,7 @@ The first progress or weekly-plan write freezes the account's current reporting 
 
 Archived goals retain history but reject changes. Identical progress retries still return their original entry, including its void state. Units cannot change after entries or plans exist; changing the lifetime target recalculates only the lifetime percentage. Stale versions return `409`.
 
-**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks were subsequently implemented in Stage C and habits in Day 4 B2; the dashboard API was subsequently added in Day 5; AI and product frontend workflows remain unimplemented; account interfaces arrived in Day 6 B2.
+**Verified November 2, 2026:** Maven `verify` passed 83 tests (all 58 existing cases plus 4 goal-rule tests and 21 PostgreSQL/HTTP goals tests), with zero failures/errors/skips. V1–V3 and Hibernate schema validation passed. Tasks were subsequently implemented in Stage C and habits in Day 4 B2; the dashboard API was subsequently added in Day 5; AI remains unimplemented; account interfaces arrived in Day 6 B2 and goals/tasks in B3.
 
 ## Tasks API (Day 3, Stage C)
 
@@ -228,7 +228,7 @@ Missing pre-baseline timezone history is never fabricated. A pre-habit account w
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-Product frontend workflows, account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
+Habit/analytics interfaces, account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
 
 ## Documentation
 
@@ -243,7 +243,7 @@ The display identity is **belsen.** Primary yellow `#FACC15`, background `#FAFAF
 
 ## Frontend accounts (Day 6 B2)
 
-`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. Goals, tasks, habits and analytics pages remain honest placeholders; AI Coach remains planned.
+`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. At the B2 checkpoint, product pages were placeholders; B3 below implements goals/tasks. Habit/analytics interfaces and AI Coach remain planned.
 
 Use Node 24.x and the existing pinned lockfile (TypeScript 6 supports the selected ESLint integration):
 
@@ -278,3 +278,25 @@ npm audit --omit=dev
 Production asset packaging and Spring Boot SPA delivery remain a later stage. `npm run build` produces standalone assets; Vite development routing supports browser refreshes. The backend does not broadly permit static routes or swallow private API errors in an SPA fallback.
 
 Verified November 14, 2026: typecheck, ESLint, **74 frontend tests**, production build, **8 mocked smoke tests**, **6 real-backend Chromium tests**, and **231 backend tests** (50 unit + 181 PostgreSQL integration) passed, with no failures or skips. Flyway V1–V5 and Hibernate validation passed. Full/production npm advisory audits reported zero vulnerabilities. Keyboard navigation, labels, visible focus, error feedback, responsive overflow and account screenshots were reviewed; this is focused accessibility coverage, not a full assistive-technology certification.
+
+
+## Goals and tasks interface (Day 6 B3)
+
+After starting the local backend and `npm run dev` as above, sign in and open **Goals** or **Tasks**. These pages use the actual session/CSRF APIs, not local persistence. No backend logic, migrations, dependencies or security configuration changed in B3.
+
+- Goals: paginated list and details; create/edit/archive; explicit progress, paginated history and auditable voiding; current/future weekly target creation and supported future-plan edits. Lifetime and weekly units/percentages come from Java. Unit changes remain restricted after progress/planning and are paused while a progress outcome is uncertain.
+- Tasks: paginated list and details; create/edit, optional owned goal and whole-minute estimate; complete/reopen, reschedule/remove date and archive. Filters select active **or** archived tasks, status, owned goal and either an exact current due date or an inclusive range. Original reporting due dates remain visible and never change through rescheduling/archive. An empty goal filter means all tasks regardless of association; the backend has no unassigned-only filter.
+- Conflicts: drafts survive 409 responses. The UI refreshes the server snapshot and requires an explicit choice to keep the draft with the latest version or replace it. No stale mutation is automatically replayed; actions do not optimistically invent success. Archive and progress-void confirmations support keyboard cancellation.
+
+Quantities remain strings until the existing exact JSON codec emits numeric literals, with at most 15 integer digits and four fractional digits; invalid inputs are rejected without rounding. Response versions remain exact strings internally and are serialized as exact integer tokens. Goal, task and plan versions are separate. First plan creation omits version; an existing future plan sends only its plan token. Counts are not narrowed through unsafe JavaScript numbers.
+
+Progress creates a submission UUID before the first request. An uncertain outcome freezes that UUID, date and quantity; explicit retry sends the identical payload. The private in-memory intent survives navigation within this application session. It does **not** survive reload, tab closure or logout: check persisted history before recording again in those cases. Conflicting UUID reuse remains frozen until the user explicitly starts a separate entry after reviewing history. Voiding and replacement are independent operations.
+
+Date-only fields stay ISO strings. The goal detail reads only reporting-period metadata from the existing dashboard endpoint; no analytics dashboard UI is implemented. The server's cutoff/timezone determines the initial progress date, not the device clock or current profile zone. Unknown/conflicting calendar context pauses calendar-dependent writes. The UI supports civil dates 1900–9998; the backend remains authoritative. A first plan during an open week is allowed, then fixed; existing started/closed plans cannot be edited. Future timezone metadata is confirmed only when the server reserves the week.
+
+Run the same checks listed above. `npm run e2e:real` now includes B2 and B3 cases against disposable PostgreSQL/Spring Boot. The lost-response test forwards the original POST to the real backend, verifies its commit, then drops only the browser response; its retry must return the same entry. Two independent browser contexts verify goal, weekly-plan and task conflicts. Isolated unit/component fixtures remain separate from this evidence.
+
+Known limits: lists and history are paginated, but the existing goal response returns all weekly plans. Large plan histories retain that backend response/query cost. Filters/pagination reset when the page reloads; selected goal/task IDs in the URL restore details. Calendar conflicts, archived resources and uncertain creates require deliberate review. Habits, analytics, AI Coach and production SPA delivery remain later work; B3 does not begin them. Live Google authentication is still unverified.
+
+
+Verified November 15, 2026: **132 frontend tests** (all 74 B2 cases plus 58 B3 cases), **8 mocked Chromium smoke tests**, **12 real-backend Chromium tests** (six B2 and six B3 desktop/mobile cases), typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures/errors/skips; V1–V5 and Hibernate validation remained intact. Full/production npm audits reported zero vulnerabilities. Real browser verification included exact maximum target quantities, response-loss retries without duplicate progress, void history, task lifecycle/persistence, real two-context conflicts, filtering/pagination, account isolation and keyboard confirmations. Fixture processes and disposable PostgreSQL were cleaned up. Desktop/mobile screenshots and focus/contrast/overflow were reviewed; this is focused accessibility evidence, not complete assistive-technology certification.
