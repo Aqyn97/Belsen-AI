@@ -7,5 +7,5 @@
     "skipLibCheck": true, "allowImportingTsExtensions": true, "noEmit": true,
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom", "node"]
   },
-  "include": ["src", "e2e", "*.ts"]
+  "include": ["src", "e2e", "e2e-real", "*.ts"]
 }

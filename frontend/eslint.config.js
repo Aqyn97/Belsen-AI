@@ -4,5 +4,6 @@ import hooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 export default ts.config({ ignores: ['dist/**', 'coverage/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended, ...ts.configs.recommended,
+  { files: ['scripts/*.mjs'], languageOptions: { globals: globals.node } },
   { files: ['**/*.{ts,tsx}'], languageOptions: { globals: { ...globals.browser, ...globals.node } },
     plugins: { 'react-hooks': hooks }, rules: hooks.configs.recommended.rules });

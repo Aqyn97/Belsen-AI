@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/auth/csrf', route => route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'smoke-token' } }));
+});
 test('public shell is honest, keyboard-accessible and fits the viewport', async ({ page }, info) => {
   await page.goto('/'); await expect(page.getByRole('heading',{level:1})).toContainText('Make room');
   await page.screenshot({ path: info.outputPath('public-shell.png'), fullPage: true });
@@ -7,7 +10,7 @@ test('public shell is honest, keyboard-accessible and fits the viewport', async 
 });
 test('anonymous routes stay gated against mocked API', async ({ page }) => {
   await page.route('**/api/v1/me', route => route.fulfill({ status:401, body:'{}', contentType:'application/problem+json' }));
-  await page.goto('/app/dashboard'); await expect(page.getByRole('heading',{name:'Your next chapter'})).toBeVisible();
+  await page.goto('/app/dashboard'); await expect(page.getByRole('heading',{name:'Welcome back.'})).toBeVisible();
 });
 test('authenticated shell navigation uses mocked session without fake product data', async ({ page }) => {
   await page.route('**/api/v1/me', route => route.fulfill({ body:JSON.stringify({id:'test',email:'test@example.test',displayName:'Fixture',timezone:'UTC'}), contentType:'application/json' }));

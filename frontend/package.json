@@ -13,7 +13,8 @@
     "test": "vitest run",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:real": "playwright test --config playwright.real.config.ts"
   },
   "dependencies": {
     "react": "19.3.1",

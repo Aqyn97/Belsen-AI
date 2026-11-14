@@ -94,6 +94,7 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             var callback = browser.request("GET", "/login/oauth2/code/google?code=mock-code&state="
                     + URLEncoder.encode(query.get("state"), StandardCharsets.UTF_8), null, false);
             assertThat(callback.statusCode()).withFailMessage(callback.body()).isEqualTo(302);
+            assertThat(callback.headers().firstValue("Location")).contains("/auth/callback");
             assertThat(browser.cookie()).isNotEqualTo(before);
             assertThat(browser.request("GET", "/api/v1/me", null, false).statusCode()).isEqualTo(200);
             UUID id = users.findByEmail(PROVIDER.email).orElseThrow().getId();
@@ -110,7 +111,8 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             browser.request("GET", "/oauth2/authorization/google", null, false);
             int before = PROVIDER.tokenCalls.get();
             var failure = browser.request("GET", "/login/oauth2/code/google?code=mock-code&state=invalid", null, false);
-            assertThat(failure.statusCode()).isEqualTo(401);
+            assertThat(failure.statusCode()).isEqualTo(302);
+            assertThat(failure.headers().firstValue("Location")).contains("/auth?error=google");
             assertThat(failure.body()).doesNotContain("mock-code", "invalid", "Exception");
             assertThat(PROVIDER.tokenCalls.get()).isEqualTo(before);
             assertThat(browser.request("GET", "/api/v1/me", null, false).statusCode()).isEqualTo(401);
@@ -123,7 +125,8 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             String state = query(URI.create(start.headers().firstValue("Location").orElseThrow()).getRawQuery()).get("state");
             var result = browser.request("GET", "/login/oauth2/code/google?error=access_denied&error_description=sensitive-provider-message&state="
                     + URLEncoder.encode(state, StandardCharsets.UTF_8), null, false);
-            assertThat(result.statusCode()).isEqualTo(401);
+            assertThat(result.statusCode()).isEqualTo(302);
+            assertThat(result.headers().firstValue("Location")).contains("/auth?error=google");
             assertThat(result.body()).doesNotContain("sensitive-provider-message");
         }
     }
@@ -136,7 +139,8 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             PROVIDER.nonce = "wrong-nonce";
             var result = browser.request("GET", "/login/oauth2/code/google?code=mock-code&state="
                     + URLEncoder.encode(parameters.get("state"), StandardCharsets.UTF_8), null, false);
-            assertThat(result.statusCode()).isEqualTo(401);
+            assertThat(result.statusCode()).isEqualTo(302);
+            assertThat(result.headers().firstValue("Location")).contains("/auth?error=google");
             assertThat(users.findByEmail(PROVIDER.email)).isEmpty();
             assertThat(browser.request("GET", "/api/v1/me", null, false).statusCode()).isEqualTo(401);
         }
@@ -151,7 +155,8 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             PROVIDER.nonce = parameters.get("nonce");
             var result = browser.request("GET", "/login/oauth2/code/google?code=mock-code&state="
                     + URLEncoder.encode(parameters.get("state"), StandardCharsets.UTF_8), null, false);
-            assertThat(result.statusCode()).isEqualTo(401);
+            assertThat(result.statusCode()).isEqualTo(302);
+            assertThat(result.headers().firstValue("Location")).contains("/auth?error=google");
             assertThat(users.findByEmail(PROVIDER.email)).isEmpty();
         }
     }
@@ -166,7 +171,8 @@ class GoogleAuthenticationIT extends PostgresHttpSupport {
             PROVIDER.nonce = parameters.get("nonce");
             var result = browser.request("GET", "/login/oauth2/code/google?code=mock-code&state="
                     + URLEncoder.encode(parameters.get("state"), StandardCharsets.UTF_8), null, false);
-            assertThat(result.statusCode()).isEqualTo(401);
+            assertThat(result.statusCode()).isEqualTo(302);
+            assertThat(result.headers().firstValue("Location")).contains("/auth?error=google");
             assertThat(browser.request("GET", "/api/v1/me", null, false).statusCode()).isEqualTo(401);
         }
     }

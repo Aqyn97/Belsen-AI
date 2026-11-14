@@ -21,3 +21,23 @@ it('ignores a stale 401 arriving after authentication changed', async () => {
   const old = client.request('/me',unknown);await client.afterAuthentication();finish(response('{}',401));
   await expect(old).rejects.toHaveProperty('name','AbortError');expect(listener).not.toHaveBeenCalled();sessionEvents.removeEventListener('expired',listener);
 });
+
+it('discards an old successful private response after logout clears the session', async () => {
+  let finish!: (value: Response) => void;
+  const fetcher = vi.fn<typeof fetch>().mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+  const client = createApiClient(fetcher); const old = client.request('/me', unknown);
+  client.clear(); finish(response('{"id":"old-account"}'));
+  await expect(old).rejects.toHaveProperty('name','AbortError');
+});
+it('uses a new token for an explicit retry after 403 without replaying the failed mutation', async () => {
+  let csrf = 0; let mutations = 0;
+  const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
+    if (String(url).endsWith('/csrf')) return response(JSON.stringify({headerName:'X-CSRF-TOKEN',token:`token-${++csrf}`}));
+    return response('{}',++mutations === 1 ? 403 : 200);
+  });
+  const client = createApiClient(fetcher);
+  await expect(client.request('/me',unknown,{method:'PATCH',body:{}})).rejects.toBeInstanceOf(ApiError);
+  expect(mutations).toBe(1); await client.bootstrap(); expect(mutations).toBe(1);
+  await client.request('/me',unknown,{method:'PATCH',body:{}});
+  expect(new Headers(fetcher.mock.calls.at(-1)?.[1]?.headers).get('X-CSRF-TOKEN')).toBe('token-2');
+});

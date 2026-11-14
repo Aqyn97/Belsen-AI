@@ -83,9 +83,8 @@ public class SecurityConfig {
                         problems.write(request, response, 403, "Access is denied.")));
         if (googleEnabled) {
             http.oauth2Login(config -> config.userInfoEndpoint(info -> info.oidcUserService(oidc.getObject()))
-                    .successHandler((request, response, authentication) -> response.sendRedirect("/api/v1/me"))
-                    .failureHandler((request, response, exception) -> problems.write(request, response, 401,
-                            "Google sign-in could not be completed. Use your original sign-in method if you have an account.")));
+                    .successHandler((request, response, authentication) -> { response.setStatus(302); response.setHeader("Location", "/auth/callback"); })
+                    .failureHandler((request, response, exception) -> { response.setStatus(302); response.setHeader("Location", "/auth?error=google"); }));
         }
         return http.build();
     }

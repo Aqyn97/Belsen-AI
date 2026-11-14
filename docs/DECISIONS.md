@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Subsequent decisions record implemented goals, tasks, habits and the dashboard API; immutable report finalization, frontend and coaching remain planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
+The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Subsequent decisions record implemented goals, tasks, habits and the dashboard API; immutable report finalization, product frontend workflows and coaching remain planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
 
 ## D01: modular monolith with feature packages
 
@@ -88,7 +88,7 @@ Stage C will validate and store profile timezones. There are no reporting period
 
 Use delegating BCrypt (default cost 10), a 12-character minimum and a 72-byte UTF-8 maximum for registration passwords. Login errors are generic and missing-password/unknown accounts use a dummy hash comparison. Request DTO string representations redact credentials. Keep CSRF active for every cookie-authenticated mutation and refresh the token after authentication.
 
-Add only the Boot-managed OAuth2 client starter. Google is disabled by default, with validated credentials when enabled. Spring validates provider tokens; local association uses the Google subject. Never merge on email. New accounts use UTC until profile update. Callback failures return safe Problem Details; success redirects to `/api/v1/me` until the frontend exists. Tests use a local signed-token mock provider, not real credentials.
+Add only the Boot-managed OAuth2 client starter. Google is disabled by default, with validated credentials when enabled. Spring validates provider tokens; local association uses the Google subject. Never merge on email. New accounts use UTC until profile update. At the Stage C checkpoint, callback failures returned safe Problem Details and success redirected to `/api/v1/me`. Day 6 B2 supersedes these browser destinations with fixed relative SPA redirects. Tests use a local signed-token mock provider, not real credentials.
 
 Use a bounded synchronized in-memory throttle (10,000 keys; 10 attempts/email and 50/address per 15 minutes). It limits registration and login, counts successes and rejects new entries at capacity. The tradeoff is reset on restart and no coordination between instances. Trusted reverse-proxy handling must be configured before public hosting; supplied forwarding headers are not treated as authoritative today.
 
@@ -166,3 +166,12 @@ Task counts use original due-week membership present in the last event before cu
 Extend the shared calendar with bounded exact/adjacent/policy lookups rather than a second calendar architecture. Never write during dashboard reads. New-account current previews are explicitly UNFROZEN; unavailable history and calendar gaps do not use fabricated timezones. Default requests exactly at a week opening are valid; explicit cutoffs must be inside the elapsed period.
 
 Closed results remain CLOSED_UNFINALIZED. REPEATABLE READ prevents mixed commits within one response but cannot prevent a later commit accepted before week-end from changing a subsequent report. No finalization table, snapshot write or new migration is authorized here. Immutable finalization and goal-creation writer coordination remain future work. Other tradeoffs are independent snapshots across pages, current metadata labels, and query cost proportional to relevant records. Query-plan evidence did not justify additional indexes or dependencies.
+
+
+## D20: browser accounts using existing JDBC sessions
+
+**Implemented in Day 6 B2.** Keep the existing same-origin API and in-memory CSRF generation guard. Bootstrap CSRF before session restoration; rotate security state after password/OIDC authentication and cancel/remove private caches across account transitions. Logout clears client state after confirmed success; network failure is not proof of logout. Session reconciliation detects an account changed elsewhere and clears previous-owner caches. No browser credentials, passwords or tokens are stored in localStorage.
+
+Use fixed relative OAuth destinations `/auth/callback` and `/auth?error=google`. Preserve Spring state/nonce/signature verification and reject email collisions. A public Vite build flag reveals the Google link only for configured deployments; secrets remain backend-only. Keep the development proxy Host and registered browser-facing callback consistent. This introduces no CORS, proxy trust, cookie or API authorization relaxation. Real Google verification remains external work.
+
+Native forms and shared fields avoid additional dependencies. Validate Unicode code points and UTF-8 bytes without trimming passwords. Settings edit only existing name/timezone fields; prospective calendar conflicts remain server decisions. No production SPA packaging/fallback or product workflows are authorized in B2. Real PostgreSQL-backed Chromium journeys complement rather than replace mocked component/shell tests.

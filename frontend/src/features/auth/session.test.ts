@@ -1,0 +1,10 @@
+import { expect, it } from 'vitest';
+import { ApiError } from '../../shared/api/client';
+import { failureMessage, passwordError, safeReturn, timezoneError } from './session';
+it('counts password Unicode code points rather than UTF-16 units', () => { expect(passwordError('😀'.repeat(11))).toMatch(/12/); expect(passwordError('😀'.repeat(12))).toBeUndefined(); });
+it('accepts exactly 72 UTF-8 bytes and rejects 73 without trimming', () => { expect(passwordError('😀'.repeat(18))).toBeUndefined(); expect(passwordError('😀'.repeat(18) + 'a')).toMatch(/72/); expect(passwordError(' a'.repeat(36))).toBeUndefined(); expect(passwordError('a'.repeat(72) + ' ')).toMatch(/72/); });
+it('rejects blank passwords', () => expect(passwordError(' '.repeat(12))).toBeDefined());
+it.each(['https://evil.test','//evil.test','/app/settings?next=evil','/app/../auth',null])('rejects unsafe return destination %s', value => expect(safeReturn(value)).toBe('/app/dashboard'));
+it('accepts only fixed protected paths', () => expect(safeReturn('/app/tasks')).toBe('/app/tasks'));
+it('validates IANA zones including UTC and rejects offsets', () => { expect(timezoneError('Asia/Almaty')).toBeUndefined(); expect(timezoneError('UTC')).toBeUndefined(); expect(timezoneError('+05:00')).toBeDefined(); expect(timezoneError('Invalid/Zone')).toBeDefined(); });
+it('presents safe throttle feedback without trusting provider error details', () => { expect(failureMessage(new ApiError({status:429,detail:'private'},'900'))).toMatch(/900 seconds/); expect(failureMessage(new ApiError({status:429},'<script>'))).not.toMatch(/script/); expect(failureMessage(new ApiError({status:401,detail:'email exists'}))).not.toMatch(/exists/); });

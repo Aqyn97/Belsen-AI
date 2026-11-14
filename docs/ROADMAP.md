@@ -121,9 +121,15 @@ Dependencies: stable enough API contracts and incremental browser integration fr
 
 ### Day 6 B1 checkpoint
 
-Implemented the frontend foundation only: strict React/TypeScript tooling, pinned dependencies/lockfile, relative fetch/CSRF client, exact-number codec, shared UI styles/components, public placeholders and a real-session-gated responsive shell. No authentication forms or product workflows are complete. Backend source/configuration remain unchanged. OAuth redirect changes, production SPA delivery and all subsequent frontend feature slices require separate approval. The November 6 target is an unmet historical target, not a release claim.
+Implemented the frontend foundation only: strict React/TypeScript tooling, pinned dependencies/lockfile, relative fetch/CSRF client, exact-number codec, shared UI styles/components, public placeholders and a real-session-gated responsive shell. At this checkpoint, authentication forms and product workflows were incomplete, and backend source/configuration were unchanged. OAuth redirect changes and later frontend slices required separate approval; B2 below records its authorized account work. Production SPA delivery remains deferred. The November 6 target is an unmet historical target, not a release claim.
 
 Verified November 12, 2026: typecheck, ESLint, 42 frontend tests, production build and 8 mocked-session Chromium smoke tests passed. Both dependency audits are clean. All 231 backend tests still pass; source/configuration and V1–V5 are unchanged. Real backend/browser authentication, production SPA packaging and complete product workflows remain unverified/unimplemented.
+
+### Day 6 B2 checkpoint
+
+Implemented account interfaces only: email/password registration/login, session restoration and protected deep links, confirmed logout/cache clearing, profile display/name/timezone edits and configured Google navigation/callback handling. Fixed relative OAuth redirects are the only backend behavior change. Product workflows, production asset packaging and deployment remain outside B2. Live Google authentication is still unverified.
+
+Acceptance evidence, November 14, 2026: strict typecheck, ESLint, 74 frontend unit/component tests, production build, 8 mocked-session Chromium smoke tests and 6 real-backend Chromium desktop/mobile tests passed. All 231 backend tests passed (50 unit, 181 PostgreSQL integration), zero failures/errors/skips, with V1–V5 and Hibernate validation. Both npm advisory audits reported zero vulnerabilities. Real-browser tests verified session rotation, stale-CSRF rejection, persisted settings, reloads, password login/logout and two-account isolation against disposable PostgreSQL. Keyboard, responsive overflow, focus/error labels and desktop/mobile screenshots were reviewed. This does not establish live Google or production HTTPS readiness.
 
 ## Day 7: coaching and release
 
