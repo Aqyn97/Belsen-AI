@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports accounts, goals, explicit progress/weekly plans and task workflows. Habit and analytics interfaces remain planned.
+**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports accounts, goals, explicit progress/weekly plans, tasks and habit workflows. Dashboard and analytics interfaces remain planned.
 
 | Area | Status |
 | --- | --- |
@@ -24,7 +24,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
-| React frontend | Accounts, goals/progress/plans and tasks implemented; habits/analytics interfaces planned |
+| React frontend | Accounts, goals, tasks and habits implemented; dashboard/analytics interfaces planned |
 | CI and deployment | Planned |
 
 The original target for the first working MVP was **November 6, 2026**; it remains an unmet historical target. The roadmap describes acceptance criteria; it is not a claim that those criteria have been met.
@@ -228,7 +228,7 @@ Missing pre-baseline timezone history is never fabricated. A pre-habit account w
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-Habit/analytics interfaces, account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
+Dashboard/analytics interfaces, account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
 
 ## Documentation
 
@@ -243,7 +243,7 @@ The display identity is **belsen.** Primary yellow `#FACC15`, background `#FAFAF
 
 ## Frontend accounts (Day 6 B2)
 
-`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. At the B2 checkpoint, product pages were placeholders; B3 below implements goals/tasks. Habit/analytics interfaces and AI Coach remain planned.
+`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. At the B2 checkpoint, product pages were placeholders; B3 below implements goals/tasks. B4 below implements habits. Dashboard/analytics interfaces and AI Coach remain planned.
 
 Use Node 24.x and the existing pinned lockfile (TypeScript 6 supports the selected ESLint integration):
 
@@ -296,7 +296,30 @@ Date-only fields stay ISO strings. The goal detail reads only reporting-period m
 
 Run the same checks listed above. `npm run e2e:real` now includes B2 and B3 cases against disposable PostgreSQL/Spring Boot. The lost-response test forwards the original POST to the real backend, verifies its commit, then drops only the browser response; its retry must return the same entry. Two independent browser contexts verify goal, weekly-plan and task conflicts. Isolated unit/component fixtures remain separate from this evidence.
 
-Known limits: lists and history are paginated, but the existing goal response returns all weekly plans. Large plan histories retain that backend response/query cost. Filters/pagination reset when the page reloads; selected goal/task IDs in the URL restore details. Calendar conflicts, archived resources and uncertain creates require deliberate review. Habits, analytics, AI Coach and production SPA delivery remain later work; B3 does not begin them. Live Google authentication is still unverified.
+Known limits: lists and history are paginated, but the existing goal response returns all weekly plans. Large plan histories retain that backend response/query cost. Filters/pagination reset when the page reloads; selected goal/task IDs in the URL restore details. Calendar conflicts, archived resources and uncertain creates require deliberate review. At the B3 checkpoint, habits, analytics, AI Coach and production SPA delivery remained later work. B4 below implements habits only. Live Google authentication is still unverified.
 
 
 Verified November 15, 2026: **132 frontend tests** (all 74 B2 cases plus 58 B3 cases), **8 mocked Chromium smoke tests**, **12 real-backend Chromium tests** (six B2 and six B3 desktop/mobile cases), typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures/errors/skips; V1–V5 and Hibernate validation remained intact. Full/production npm audits reported zero vulnerabilities. Real browser verification included exact maximum target quantities, response-loss retries without duplicate progress, void history, task lifecycle/persistence, real two-context conflicts, filtering/pagination, account isolation and keyboard confirmations. Fixture processes and disposable PostgreSQL were cleaned up. Desktop/mobile screenshots and focus/contrast/overflow were reviewed; this is focused accessibility evidence, not complete assistive-technology certification.
+
+
+## Habits interface (Day 6 B4)
+
+Sign in and open **Habits** using the local setup above. The checklist shows at most five active or archived routines per page, with one bounded daily-history read for each visible habit. Browse all pages for other obligations; this is not an account-wide score. An unscheduled or unstarted day is never presented as an incomplete obligation, and planned rest is distinct from completion.
+
+- Create a routine with title, optional description, distinct Monday–Sunday weekday controls, start date and optional inclusive end date. Metadata can be edited independently from scheduling.
+- Complete or undo scheduled days in the current open reporting week. Undo sends the exact strong quoted habit version through `If-Match`, plus the reporting week supplied by the day response. Completion never changes before server confirmation.
+- Check a future rest date to read its own reporting-day window, then confirm a reasoned rest plan or cancellation before its server-defined start. A future week can use a different timezone from the overview; its returned week is used for the request.
+- View the current schedule separately from the latest pending revision. Revisions become effective tomorrow or later, preserve earlier obligations and can supersede older pending changes where applicable. Earlier accepted revisions remain in history.
+- Review up to 93 dates with independent day/action/schedule pagination and an optional exact UTC cutoff. Historical day states and applied revisions come from backend reconstruction, not the current schedule. Explicit-cutoff views are read-only and their schedule records are not mislabeled using today's current/pending selection.
+- Archive after confirmation: scheduling stops from tomorrow in the reporting calendar, while earlier obligations and audit records remain. Archived habits can still complete/undo retained open-week obligations. There is no unarchive action.
+
+Every action uses the existing authenticated, CSRF-protected API. All dates of a habit share one version; no occurrence token or schedule sequence substitutes for it. A memory-only per-habit lock survives component navigation/remounts and rejects overlapping requests rather than queuing stale actions. Returned versions advance an account-scoped version floor. Metadata/schedule drafts survive conflicts and require explicit review before using a fresh version; daily/rest actions are never automatically replayed. Habit, reporting and relevant dashboard/analytics caches are invalidated after writes.
+
+Reporting-date defaults come from server period metadata. Each daily/rest/history view uses the returned day window, including frozen timezone, clipped boundaries and DST. No device date is substituted when context is unavailable. Creation can instead accept an intentional user-entered start date for backend validation. Day actions require actual server evidence; a reporting-day rollover or unavailable context pauses those controls until refreshed. Rest confirmations close when submitted, so a late failure cannot close a newly opened retry; failed preview refreshes require fresh evidence before confirmation. The same checked-date controls stay mounted while detail and preview responses arrive at different times, preserving an unsaved rest reason through conflict refreshes.
+
+Use the existing commands (`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `npm run e2e`, `npm run e2e:real`). Run backend Maven `verify` before real browser tests. The real-browser fixture now loads a **test-only** launcher from compiled test classes and anchors the reporting clock to Monday **2026-11-02T12:00:00Z**, with advancing acceptance instants. This makes scheduled days deterministic and permits genuine historical-cutoff tests. It still runs the actual Spring Boot application and disposable PostgreSQL. The launcher is outside production scanning, absent from the production JAR, exposes no clock-control endpoint and does not change production `Clock.systemUTC()` or validation.
+
+Limits: the board is paginated rather than a universal daily-board endpoint; visible day reads are bounded to five. One rendered habit page permits one operation at a time, with an additional per-habit lock across remounts. Context is a server snapshot, not a live clock; refresh after inactivity. Explicit-cutoff pages are separate database reads and are not immutable finalized reports. No lifetime streak or consistency percentage is invented. Production backend APIs, security configuration, V1–V5 and dependency versions are unchanged. Analytics, AI Coach, deployment and live Google verification remain outside B4.
+
+
+Verified November 16, 2026: **177 frontend tests** (132 existing plus 45 B4), **8 mocked Chromium smoke tests**, **18 real Spring Boot/PostgreSQL Chromium tests** and **three additional desktop concurrency repeats** passed. Typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures, errors or skips; Flyway V1–V5 and Hibernate validation passed. Full and production npm audits reported zero vulnerabilities. Source, credential and generated-artifact checks passed, and the test launcher was confirmed absent from the production JAR. Focused keyboard, dialog focus/Escape, weekday input, account isolation and 320/375/768-pixel overflow checks passed; desktop/mobile screenshots were reviewed. This is not full assistive-technology or cross-browser certification. No unresolved critical, high or medium B4 review finding remained.

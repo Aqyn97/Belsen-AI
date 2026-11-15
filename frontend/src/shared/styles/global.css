@@ -395,3 +395,24 @@ dialog { width:min(90vw,30rem); max-height:85vh; overflow:auto; border:1px solid
 dialog::backdrop { background:rgb(23 23 23 / .45); }
 @media(max-width:1100px) { .product-grid { grid-template-columns:1fr; } }
 @media(max-width:480px) { .form-columns { grid-template-columns:1fr; gap:0; } .product-panel,.filter-panel { padding:1rem; } .product-heading .button { width:100%; } .pagination { align-items:stretch; flex-direction:column; } .product-heading { align-items:flex-start; } }
+
+.reporting-strip { display:grid; gap:.6rem; border-left:4px solid #FACC15; padding:1rem 1.25rem; margin:1.5rem 0; background:white; }
+.reporting-strip .button { justify-self:start; }
+.habit-board { list-style:none; margin:1rem 0; padding:0; }
+.habit-card { padding:1.25rem 0; border-bottom:1px solid var(--border); display:grid; gap:.75rem; overflow-wrap:anywhere; }
+.habit-card .button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.habit-title { justify-content:flex-start; text-align:left; font-size:1.1rem; }
+.habit-title[aria-pressed=true] { background:#fef3b6; }
+.habit-state { display:block; }
+.weekday-selector { border:1px solid var(--border); border-radius:var(--radius-sm); padding:1rem; }
+.weekday-selector legend { padding:0 .5rem; font-weight:650; }
+.weekday-selector>div { display:flex; flex-wrap:wrap; gap:.6rem 1rem; }
+.weekday-selector label { display:inline-flex; align-items:center; gap:.5rem; min-height:44px; }
+.weekday-selector input { accent-color:#171717; width:1.2rem; height:1.2rem; }
+.schedule-info { margin-top:1.5rem; overflow-wrap:anywhere; }
+.schedule-info h3 { margin-bottom:.5rem; }
+.schedule-info p { margin-bottom:.5rem; }
+.habit-day { padding:1rem 0; }
+.day-controls { display:grid; gap:.75rem; }
+.day-controls:empty { display:none; }
+.history-caption { margin-top:1rem; font-weight:650; overflow-wrap:anywhere; }

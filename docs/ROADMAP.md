@@ -149,6 +149,26 @@ Verified November 15, 2026: 132 frontend tests, 8 mocked smoke tests and 12 real
 
 The next frontend slice may implement habits and analytics after separate approval. B3 does not start it. Production delivery, live Google verification and coaching remain open release gates. Goal plan arrays and memory-only retry intents retain their documented limitations.
 
+### Day 6 B4 checkpoint
+
+Habits replace their placeholder with bounded daily checklists, creation and metadata editing, current-open-week completion/undo, prospective rest planning/cancellation, future schedule revisions, accepted history and archive. Dashboard/analytics, coaching and deployment are not part of B4.
+
+Acceptance criteria:
+
+- Weekday controls send distinct ISO 1–7 values; creation starts today or later and optional end dates are inclusive.
+- Visible daily rows use reconstructed server evidence. Rest, unscheduled and unstarted dates never count as incomplete/completed obligations incorrectly.
+- All dates share the habit-wide token. Synchronous locks survive remounts; DELETE actions use exact strong If-Match and the selected date's reporting week.
+- Rest checks the future day window before confirmation; prospective timezone revisions and the frozen current week remain distinct.
+- Metadata/revision drafts survive 409 responses. Completion, undo and rest are never automatically replayed; older responses cannot restore stale state or dismiss new confirmations.
+- History stays within 93 dates, paginates three evidence streams independently and labels explicit-cutoff records without borrowing current schedule status.
+- Archive preserves today/earlier obligations and immutable evidence; no unarchive or invented streak/consistency score is offered.
+- Real PostgreSQL/Chromium desktop/mobile tests use a test-only deterministic reporting clock, verify two-context conflicts, frozen/prospective timezones, history and ownership, and clean up all resources.
+- All frontend/backend quality gates, dependency/credential/artifact checks and review pass before publication. Production backend clock, validation, security and V1–V5 remain unchanged.
+
+Verified November 16, 2026: 177 frontend tests, 8 mocked Chromium tests, 18 real Spring Boot/PostgreSQL desktop/mobile tests and three additional desktop concurrency repeats passed. Typecheck, ESLint, production build and Maven verification passed; backend totals remain 231 (50 unit, 181 integration), with no failures/errors/skips. V1–V5, Hibernate validation, both npm audits, credential/artifact checks and whitespace review passed. Focused keyboard, dialog, responsive overflow and screenshot review found no material issue. The test-only clock launcher is absent from the production JAR.
+
+Next: an analytics/dashboard frontend may be proposed after separate approval. B4 does not begin analytics, AI Coach or deployment; live Google browser verification remains an external gate.
+
 ## Day 7: coaching and release
 
 Acceptance criteria:

@@ -2,7 +2,7 @@
 // Requires Docker, Java 21 and a successful backend Maven verify. No persistent volume.
 import { execFileSync, spawn } from 'node:child_process';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { existsSync, copyFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, copyFileSync, mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,10 @@ if (!existsSync(sourceJar)) throw new Error('Run backend Maven verify before rea
 const temporary = mkdtempSync(join(tmpdir(), 'belsen-browser-'));
 const jar = join(temporary, 'backend.jar');
 copyFileSync(sourceJar, jar);
+const fixtureSource = fileURLToPath(new URL('../../backend/target/test-classes/org/belsenfixture', import.meta.url));
+if (!existsSync(fixtureSource)) { rmSync(temporary, {recursive:true,force:true}); throw new Error('Run backend Maven verify to compile the deterministic browser fixture.'); }
+const fixturePath = join(temporary, 'fixture-classes');
+cpSync(fixtureSource, join(fixturePath, 'org/belsenfixture'), {recursive:true});
 const name = `belsen-browser-${randomUUID()}`;
 const password = randomBytes(32).toString('hex');
 let backend;
@@ -38,7 +42,7 @@ try {
     catch { await new Promise(resolve => setTimeout(resolve, 500)); }
   }
   if (!ready) throw new Error('Disposable PostgreSQL did not become ready.');
-  backend = spawn('java',['-jar',jar],{stdio:'inherit', env:{...process.env,
+  backend = spawn('java',[`-Dloader.path=${fixturePath}`, '-Dloader.main=org.belsenfixture.BrowserFixtureApplication', '-cp', jar, 'org.springframework.boot.loader.launch.PropertiesLauncher'],{stdio:'inherit', env:{...process.env,
     SPRING_PROFILES_ACTIVE:'local', SPRING_DATASOURCE_URL:`jdbc:postgresql://${binding}/belsen_browser`,
     SPRING_DATASOURCE_USERNAME:'postgres', SPRING_DATASOURCE_PASSWORD:password, BELSEN_SERVER_PORT:'18081', BELSEN_GOOGLE_ENABLED:'false',
   }});

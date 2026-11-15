@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2 and goals/tasks in B3; immutable finalization, coach, habit/analytics interfaces and deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2, goals/tasks in B3 and habits in B4; immutable finalization, coach, dashboard/analytics interfaces and deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -400,3 +400,35 @@ Native dialogs provide focus trapping, Escape cancellation and focus restoration
 
 
 B3 verification on November 15, 2026 passed 132 frontend tests (58 added to B2), 8 mocked shell tests, 12 actual PostgreSQL/Spring Boot Chromium cases and all 231 backend tests, plus typecheck, lint and build. Both npm audits were clean. Review corrections lock units during unknown progress outcomes, reject duplicate submits before UUID allocation, retain account isolation in late handlers, avoid false claims of fresh metrics after refresh errors and distinguish an optional goal filter from an unassigned-only filter (which the API does not provide). No unresolved critical/high/medium findings remained in scope. Live Google, full assistive-technology/cross-browser verification and production delivery remain separate gates.
+
+
+## Day 6 B4: habit tracking through reconstructed evidence
+
+The habit frontend uses the existing API only. GET `/habits?page&size&archived` is capped at five visible records; each visible row performs one cancellable, one-date GET `/{id}/history`. Selected detail, rest preview and paginated history are additional bounded reads, not an unbounded traversal of the account. There is no daily-board endpoint or client-computed recurrence/consistency/streak metric.
+
+### Contract inventory
+
+| Operation under `/api/v1/habits` | Contract |
+| --- | --- |
+| GET/POST `/`, GET/PATCH `/{id}` | Owned list/detail/create/metadata; metadata sends habit version |
+| PUT `/{id}/completions/{date}` | Habit-wide version and day response's weekStart |
+| DELETE `/{id}/completions/{date}` | Exact strong quoted If-Match; weekStart query parameter |
+| PUT/DELETE `/{id}/rest-days/{date}` | PUT adds reason; DELETE uses quoted If-Match; both use the selected day/week and must precede day start |
+| POST `/{id}/schedules` | Habit version, prospective effectiveFrom, distinct ISO weekdays and inclusive date bounds |
+| POST `/{id}/archive` | Habit version; future disablement from tomorrow, no history removal or unarchive |
+| GET `/{id}/history` | At most 93 inclusive dates; cutoff and independent page/actionPage/schedulePage/size |
+
+Current and historical states are different contracts. Current daily/rest evidence supplies a cutoff, per-date schedule and reporting-day window; the frontend checks these for action availability and sends that window's weekStart. Historical cutoffs are exclusive and read-only; unstarted day context may be omitted. Returned DayView.version is the **current habit-wide token**, not an occurrence or as-of version. Present-day current/pending schedule annotations are never applied to explicit-cutoff schedule records. A day references its server-selected accepted revision; supersession is not reconstructed in JavaScript.
+
+A WeakMap keyed by QueryClient holds synchronous owner/habit mutation locks, retained across component remounts until each request finishes. Locks reject overlap instead of queuing or replaying old intents. The rendered page additionally uses the existing pessimistic product action guard. A private query-cache version floor takes the maximum observed habit-wide version, with owner checks before publication; older day snapshots cannot enable mutations using a known stale token. Metadata and revision editors retain a separate draft base version and require explicit user review after conflict. Owner-scoped query cancellation/refetch and version-aware entity updates prevent old responses overwriting accepted writes.
+
+No day is checked off optimistically. PUT returns a DayView confirmation; subsequent invalidation refreshes actual habit/history snapshots. Rest remains an exclusion, not completion. Obsolete rest decisions remain visible and may be cancelled prospectively when allowed. Archive hides metadata/schedule editing but retains eligible open-week check-ins, because the backend permits those historical obligations. Confirmation state is cleared before dispatch, so an old asynchronous result cannot dismiss a newer dialog; a failed day-preview refresh blocks confirmation and retains the reason. The checked-date controls retain their identity while the habit version floor advances before the day preview, keeping the reason draft mounted while actions wait for coherent evidence.
+
+The reporting period is obtained from the existing dashboard metadata, without building an analytics screen. Initial date-dependent forms wait for that lookup to settle; later refreshes preserve drafts. No local-midnight or profile-timezone guess replaces stored week/day context. Unsupported browser timezone data pauses date-dependent daily controls rather than falling back to the device timezone. A future rest preview can use a prospective timezone revision while the current week remains frozen. If current context cannot be resolved, daily actions pause; creation may take an explicit user-supplied date and let Java validate it. Civil date arithmetic only validates bounds/ranges and proposes dates; Java decides eligibility.
+
+The browser harness uses a separate `org.belsenfixture.BrowserFixtureApplication` compiled under test sources, loaded through PropertiesLauncher with a temporary copy of the verified JAR and fixture classes. Its primary Clock is anchored to a known Monday and advances normally, preserving meaningful exclusive-cutoff ordering. Production classes/configuration, default clock, migrations and dependency management are unchanged; the fixture is absent from the production JAR and has no control endpoint. Existing B2/B3 cases run through the same actual database/session/security implementation. Isolated DTO mocks remain separate from real Chromium evidence.
+
+Remaining tradeoffs are five bounded day reads per board page, page-level serialization, manual refresh after time advances and independent snapshots across history pages. No report is labeled FINALIZED, and no new scheduler, calendar library, infrastructure or service was added. Analytics and coaching UI remain separate approved work.
+
+
+B4 final verification on November 16, 2026 passed 177 frontend tests, 8 mocked smoke tests, 18 real PostgreSQL/Spring Boot Chromium tests and three extra desktop conflict repeats, plus typecheck, ESLint, production build and all 231 backend tests (50 unit, 181 integration; no failures/errors/skips). Flyway V1–V5 and Hibernate validation passed; both npm audits reported zero vulnerabilities. Review checked exact versions, account isolation, CSRF/session behavior, delayed responses, frozen/prospective timezone evidence and draft preservation. Focused keyboard/focus/overflow checks and desktop/mobile screenshot review passed. No unresolved critical/high/medium B4 finding remained; complete assistive-technology/cross-browser verification and live Google/production delivery remain separate gates.

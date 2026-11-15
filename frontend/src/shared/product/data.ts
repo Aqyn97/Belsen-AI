@@ -2,14 +2,13 @@ import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api/client';
 import { period } from './contracts';
-import type { Goal, Task } from './contracts';
 import { useSession } from '../../features/auth/session';
-export const entityKey = (kind: 'goals' | 'tasks', owner: string, id: string) => [kind, owner, 'detail', id] as const;
-const kinds = new Set(['goals', 'tasks', 'reporting', 'dashboard', 'analytics']);
+export const entityKey = (kind: 'goals' | 'tasks' | 'habits', owner: string, id: string) => [kind, owner, 'detail', id] as const;
+const kinds = new Set(['goals', 'tasks', 'habits', 'reporting', 'dashboard', 'analytics']);
 export function useOwner() { return useSession().data?.id ?? ''; }
 export function useReporting(owner: string) { return useQuery({ queryKey: ['reporting', owner], queryFn: ({ signal }) => api.request('/analytics/dashboard?goalsSize=1', period, { signal }), staleTime: 0 }); }
-export function putEntity(client: QueryClient, kind: 'goals' | 'tasks', owner: string, value: Goal | Task) {
-    client.setQueryData<Goal | Task>(entityKey(kind, owner, value.id), old => old && BigInt(old.version) > BigInt(value.version) ? old : value);
+export function putEntity<T extends {id:string;version:string}>(client: QueryClient, kind: 'goals' | 'tasks' | 'habits', owner: string, value: T) {
+    client.setQueryData<T>(entityKey(kind, owner, value.id), old => old && BigInt(old.version) > BigInt(value.version) ? old : value);
 }
 export function productMessage(error: unknown, mutation = false) {
     if (error instanceof ApiError) {

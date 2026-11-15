@@ -1,0 +1,11 @@
+import { exact } from '../shared/lib/numbers';
+import { goalId } from './productFixtures';
+export const habitId='88888888-8888-4888-8888-888888888888';
+export const habitWeek={id:goalId,weekStart:'2026-11-02',timezone:'UTC',startsAt:'2026-11-02T00:00:00Z',endsAt:'2026-11-09T00:00:00Z'};
+export const habitPeriod={...habitWeek,cutoff:'2026-11-02T12:00:00Z',calendarStatus:'FROZEN'};
+export const scheduleFixture=()=>({id:'99999999-9999-4999-8999-999999999999',sequence:exact('7'),effectiveFrom:'2026-11-02',startDate:'2026-11-02',endDate:null as string|null,weekdays:[1,2,3,4,5,6,7],enabled:true,recordedAt:'2026-11-02T10:00:00Z'});
+export const habitFixture=()=>({id:habitId,title:'Read a little',description:'A quiet daily routine.' as string|null,status:'ACTIVE',archivedAt:null as string|null,archiveEffectiveDate:null as string|null,version:exact('9007199254740993'),createdAt:'2026-11-02T10:00:00Z',updatedAt:'2026-11-02T10:00:00Z',reportingWeek:habitWeek,currentSchedule:scheduleFixture(),latestPendingSchedule:null as ReturnType<typeof scheduleFixture>|null});
+const civilAdd=(date:string,count:number)=>new Date(Date.parse(`${date}T00:00:00Z`)+count*86400000).toISOString().slice(0,10);
+const weekFor=(date:string)=>{const day=new Date(`${date}T00:00:00Z`).getUTCDay();const monday=civilAdd(date,-((day+6)%7));return {...habitWeek,id:monday===habitWeek.weekStart?habitWeek.id:null,weekStart:monday,startsAt:`${monday}T00:00:00Z`,endsAt:`${civilAdd(monday,7)}T00:00:00Z`};};
+export const dayFixture=(date='2026-11-02')=>({localDate:date,started:date<='2026-11-02',scheduled:true,completed:false,restPlanned:false,restApplicable:false,eligible:date<='2026-11-02',restReason:null as string|null,version:exact('9007199254740993'),schedule:scheduleFixture(),reportingDay:{localDate:date,startsAt:`${date}T00:00:00Z`,endsAt:`${civilAdd(date,1)}T00:00:00Z`,week:weekFor(date)}});
+export const historyFixture=(days=[dayFixture()])=>({habitId,cutoff:habitPeriod.cutoff,exclusiveCutoff:false,days:{items:days,page:0,size:10,totalElements:days.length},actions:{items:[] as {id:string;localDate:string;sequence:ReturnType<typeof exact>;action:string;acceptedAt:string;completed:boolean;restPlanned:boolean;reason:string|null;reportingWeekId:string}[],page:0,size:10,totalElements:0},schedules:{items:[scheduleFixture()],page:0,size:10,totalElements:1}});
