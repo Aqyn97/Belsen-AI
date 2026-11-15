@@ -169,6 +169,25 @@ Verified November 16, 2026: 177 frontend tests, 8 mocked Chromium tests, 18 real
 
 Next: an analytics/dashboard frontend may be proposed after separate approval. B4 does not begin analytics, AI Coach or deployment; live Google browser verification remains an external gate.
 
+### Day 6 B5 checkpoint
+
+Dashboard and Analytics replace their placeholders with the existing authoritative dashboard API. Both share current-week metrics and paginated weekly goal rows; Analytics adds Monday selection and an optional exact exclusive UTC cutoff.
+
+Acceptance criteria:
+
+- Show authenticated display name, server reporting timezone/boundaries and working links to core resource workflows.
+- Preserve original task cohorts, strict eligible-day habit consistency and explicit non-voided weekly goal units. Never combine goal units or invent a score/trend.
+- Keep null percentages distinct from zero, with no fake bars and useful empty-state actions. Show actual over-target units beside capped server percentages.
+- Explain frozen/reconstructed/unfrozen calendars and provisional/closed-unfinalized reports. Never call mutable results finalized or invent missing historical metadata.
+- Validate Monday/cutoff input, preserve exact fractional seconds, paginate only server goal rows, cancel obsolete reads and isolate account caches.
+- Preserve selection drafts during refresh, reset history when returning to Dashboard, expose background refresh/error states and restore pagination focus.
+- Retain all 177 frontend and 231 backend baseline tests. Add contract, precision, null/status, race, session/isolation, invalidation and accessibility tests plus actual PostgreSQL/browser workflows.
+- Keep production backend, V1–V5 and dependency versions unchanged. Pass all quality/security/artifact checks before publication.
+
+Verified November 16, 2026: 225 frontend tests (177 preserved plus 48 new), 8 mocked smoke tests, 24 real PostgreSQL/Chromium desktop/mobile tests (18 preserved plus six new), typecheck, ESLint and build passed. Full Maven verification passed 231 tests (50 unit, 181 integration), zero failures/errors/skips; V1–V5/Hibernate, both npm audits and credential/artifact/whitespace checks passed. Metric/security review and focused keyboard, pagination, overflow and screenshot review found no unresolved critical/high/medium issue. Temporary browser resources were cleaned up.
+
+No B6, coaching, immutable snapshot finalization or production deployment is started. Full assistive-technology/cross-browser and live Google verification remain separate gates.
+
 ## Day 7: coaching and release
 
 Acceptance criteria:

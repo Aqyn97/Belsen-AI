@@ -1,0 +1,16 @@
+import { expect, it } from 'vitest';
+import { parseExact, stringifyExact, exact } from '../../shared/lib/numbers';
+import { reportFixture, emptyReportFixture } from '../../test/analyticsFixtures';
+import { dashboard, selectionError, reportPath } from './model';
+const decode=(v:unknown)=>dashboard(parseExact(stringifyExact(v)));
+it('decodes the actual complete backend schema without numeric precision loss',()=>{const r=reportFixture();r.goals.items[0]!.completedUnits=exact('1999999999999999.9998');r.goals.items[0]!.percentage=exact('100.0');expect(decode(r).goals.items[0]!.completedUnits).toBe('1999999999999999.9998');expect(decode(r).goals.items[0]!.percentage).toBe('100.0');});
+it('preserves null percentages and no-data reasons',()=>{const r=decode(emptyReportFixture());expect(r.tasks.percentage).toBeNull();expect(r.habits.reason).toBe('NO_SCHEDULED_ACTIVITY');expect(r.goals.reason).toBe('NO_GOALS');});
+it('preserves missing weekly targets separately from actual progress',()=>{const r=reportFixture();Object.assign(r.goals.items[0]!,{plannedUnits:null,percentage:null,reason:'NO_WEEKLY_TARGET'});expect(decode(r).goals.items[0]).toMatchObject({completedUnits:'12.3456',plannedUnits:null,percentage:null,reason:'NO_WEEKLY_TARGET'});});
+it.each(['FROZEN','RECONSTRUCTED','UNFROZEN'])('preserves %s calendar status',status=>{const r=reportFixture();r.period.calendarStatus=status;expect(decode(r).period.calendarStatus).toBe(status);});
+it.each(['PROVISIONAL','CLOSED_UNFINALIZED'])('preserves %s report status',status=>{const r=reportFixture();r.period.reportStatus=status;expect(decode(r).period.reportStatus).toBe(status);});
+it('rejects unsupported finality or inclusive cutoff semantics',()=>{const r=reportFixture();r.period.reportStatus='FINALIZED';expect(()=>decode(r)).toThrow();r.period.reportStatus='PROVISIONAL';r.period.cutoffExclusive=false;expect(()=>decode(r)).toThrow();});
+it('keeps long counts exact beyond the JavaScript safe integer range',()=>{const r=reportFixture();expect(decode({...r,tasks:{...r.tasks,scheduled:exact('9223372036854775807')}}).tasks.scheduled).toBe('9223372036854775807');});
+it.each(['2026-11-03','2026-02-30','1899-12-25','9999-01-04','not-a-date'])('rejects invalid reporting Monday %s',weekStart=>expect(selectionError({weekStart,cutoff:''})).toContain('Monday'));
+it('allows current server week without inferring a device date',()=>expect(selectionError({weekStart:'',cutoff:''})).toBeUndefined());
+it.each(['2026-11-02','2026-11-02T12:00:00+05:00','2026-11-02T24:00:00Z','2026-11-02T12:60:00Z','2026-02-30T12:00:00Z'])('rejects ambiguous or invalid cutoff %s',cutoff=>expect(selectionError({weekStart:'2026-11-02',cutoff})).toContain('UTC instant'));
+it('requires a week for cutoff and preserves all nine fractional digits',()=>{const cutoff='2026-11-02T12:00:00.123456789Z';expect(selectionError({weekStart:'',cutoff})).toContain('Monday');expect(selectionError({weekStart:'2026-11-02',cutoff})).toBeUndefined();const url=new URL(reportPath({weekStart:'2026-11-02',cutoff},2),'http://localhost');expect(url.searchParams.get('cutoff')).toBe(cutoff);expect(url.searchParams.getAll('goalsPage')).toEqual(['2']);expect([...url.searchParams.keys()].sort()).toEqual(['cutoff','goalsPage','goalsSize','weekStart']);});

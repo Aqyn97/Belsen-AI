@@ -1,7 +1,8 @@
+import { emptyReportFixture } from '../src/test/analyticsFixtures';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/habits?*', route => route.fulfill({json:{items:[],page:0,size:5,totalElements:0}}));
-  await page.route('**/api/v1/analytics/dashboard?*', route => route.fulfill({json:{period:{weekStart:'2026-11-02',timezone:'UTC',startsAt:'2026-11-02T00:00:00Z',endsAt:'2026-11-09T00:00:00Z',cutoff:'2026-11-02T12:00:00Z',calendarStatus:'FROZEN'}}}));
+  await page.route('**/api/v1/analytics/dashboard?*', route => route.fulfill({json:emptyReportFixture()}));
   await page.route('**/api/v1/me', route => route.fulfill({status:401,json:{}}));
   await page.route('**/api/v1/auth/csrf', route => route.fulfill({ json: { headerName: 'X-CSRF-TOKEN', token: 'smoke-token' } }));
 });

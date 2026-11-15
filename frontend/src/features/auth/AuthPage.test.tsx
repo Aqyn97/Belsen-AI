@@ -39,7 +39,7 @@ it('registers through the API only after explicit timezone confirmation', async 
   show(); const user = userEvent.setup(); await screen.findByRole('heading',{name:'Welcome back.'}); await user.click(screen.getByRole('button',{name:'New here? Create an account'}));
   await user.type(screen.getByLabelText('Email'),'alice@example.test'); await user.type(screen.getByLabelText('Display name'),'Alice'); await user.type(screen.getByLabelText('Password'),'correct horse battery');
   await user.click(screen.getByRole('button',{name:'Create account'})); expect(await screen.findByText('Confirm your reporting timezone.')).toBeVisible(); expect(posts).toHaveLength(0);
-  await user.click(screen.getByRole('checkbox')); await user.click(screen.getByRole('button',{name:'Create account'})); expect(await screen.findByRole('navigation')).toBeVisible(); expect(posts).toEqual(['/api/v1/auth/register']);
+  await user.click(screen.getByRole('checkbox')); await user.click(screen.getByRole('button',{name:'Create account'})); expect(await screen.findByRole('navigation',{name:'Workspace'})).toBeVisible(); expect(posts).toEqual(['/api/v1/auth/register']);
 });
 it.each([401,429,403])('handles %s without replay or exposing diagnostics', async status => { rejection = status; show(); await login(); expect(await screen.findByRole('alert')).not.toHaveTextContent('diagnostic'); if (status === 429) expect(screen.getByRole('alert')).toHaveTextContent('900 seconds'); expect(posts).toHaveLength(1); });
 it('hides Google when no deployment flag enables it', async () => { show(); await screen.findByRole('heading',{name:'Welcome back.'}); expect(screen.queryByRole('link',{name:'Continue with Google'})).not.toBeInTheDocument(); });

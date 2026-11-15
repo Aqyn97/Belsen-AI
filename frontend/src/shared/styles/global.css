@@ -416,3 +416,27 @@ dialog::backdrop { background:rgb(23 23 23 / .45); }
 .day-controls { display:grid; gap:.75rem; }
 .day-controls:empty { display:none; }
 .history-caption { margin-top:1rem; font-weight:650; overflow-wrap:anywhere; }
+
+.analytics-intro { max-width:46rem; }
+.dashboard-actions { display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin:2rem 0; }
+.analytics-selector { max-width:48rem; margin:2rem 0; padding:1.5rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff; }
+.analytics-selector details { margin:1rem 0; }
+.analytics-selector summary,.analytics-report summary { cursor:pointer; font-weight:650; padding:.5rem 0; }
+.analytics-report { overflow-wrap:anywhere; }
+.analytics-report .reporting-strip p { margin:0; max-width:64rem; }
+.report-tags { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; }
+.metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; margin:2rem 0 3rem; }
+.metric-panel { padding:1.75rem; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff; }
+.metric-panel h2 { margin:.5rem 0 1.5rem; }
+.metric-value { font-size:clamp(1.6rem,3vw,2.8rem); font-weight:750; line-height:1.2; letter-spacing:-.03em; }
+.metric-progress { height:.65rem; background:#e9e9e2; border-radius:1rem; overflow:hidden; margin:1.25rem 0; }
+.metric-progress>span { display:block; height:100%; background:#FACC15; border-right:2px solid #171717; }
+.weekly-goals { border-top:1px solid var(--border); padding-top:2rem; }
+.goal-metrics { list-style:none; padding:0; }
+.goal-metrics>li { padding:1.5rem 0; border-bottom:1px solid var(--border); }
+.goal-metric-heading { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; }
+.goal-metric-heading h3 { margin:0; }
+.goal-metric-heading a { color:inherit; }
+.analytics-empty { padding:1.5rem 0; }
+@media(max-width:700px) { .metric-grid { grid-template-columns:1fr; gap:1rem; }.metric-panel { padding:1.25rem; }.goal-metric-heading { flex-direction:column; gap:.5rem; }.dashboard-actions { align-items:stretch; flex-direction:column; }.analytics-selector { padding:1rem; } }
+@media(forced-colors:active) { .metric-progress { border:1px solid CanvasText; }.metric-progress>span { background:Highlight; } }

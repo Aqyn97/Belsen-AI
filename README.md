@@ -8,7 +8,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 
 ## Project status
 
-**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports accounts, goals, explicit progress/weekly plans, tasks and habit workflows. Dashboard and analytics interfaces remain planned.
+**Day 5 backend: goals, tasks, habits and analytics API.** Email/password authentication, JDBC sessions and private profiles are implemented. Google OIDC is implemented and tested with a local mock provider; live Google browser login awaits external verification. The React frontend supports accounts, goals, explicit progress/weekly plans, tasks and habit workflows. Dashboard and historical analytics interfaces are implemented.
 
 | Area | Status |
 | --- | --- |
@@ -19,12 +19,12 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Goals, progress entries and weekly targets | Implemented; goals-stage verification below |
 | Tasks and append-only history | Implemented; task-stage verification below |
 | Habit routines, rest and historical check-ins | Implemented; PostgreSQL/HTTP tests |
-| Strict habit consistency | Implemented in authenticated dashboard; frontend planned |
+| Strict habit consistency | Implemented in API and Dashboard/Analytics interfaces |
 | Analytics dashboard API | Implemented; one read-only snapshot and historical cutoff |
 | Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
-| React frontend | Accounts, goals, tasks and habits implemented; dashboard/analytics interfaces planned |
+| React frontend | Accounts, goals, tasks and habits implemented; dashboard/historical analytics implemented |
 | CI and deployment | Planned |
 
 The original target for the first working MVP was **November 6, 2026**; it remains an unmet historical target. The roadmap describes acceptance criteria; it is not a claim that those criteria have been met.
@@ -228,7 +228,7 @@ Missing pre-baseline timezone history is never fabricated. A pre-habit account w
 
 Login/registration throttling uses a bounded in-memory store: 10 attempts per normalized email and 50 per client address per 15 minutes, including successful attempts. Counters reset on process restart and are not shared across instances. A reverse proxy may group clients under one address until trusted-proxy handling is configured; arbitrary forwarded headers are not trusted. Before public deployment, configure the trusted proxy, HTTPS, registration/email verification and password recovery policy. Registration conflicts can reveal whether an email exists; login errors stay generic.
 
-Dashboard/analytics interfaces, account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
+Account linking, password reset, email verification, immutable report finalization, AI coaching, CI and public deployment remain planned. Account browser coverage is described below; live Google and production HTTPS deployment remain unverified.
 
 ## Documentation
 
@@ -243,7 +243,7 @@ The display identity is **belsen.** Primary yellow `#FACC15`, background `#FAFAF
 
 ## Frontend accounts (Day 6 B2)
 
-`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. At the B2 checkpoint, product pages were placeholders; B3 below implements goals/tasks. B4 below implements habits. Dashboard/analytics interfaces and AI Coach remain planned.
+`frontend/` contains the React/TypeScript account interface: accessible registration and login, password visibility, protected deep links, refresh restoration, logout and profile settings. Email is read-only; display name and IANA reporting timezone can be edited. Reserved weeks retain their timezone, and conflicting future reservations can reject a change with 409. At the B2 checkpoint, product pages were placeholders; B3 below implements goals/tasks. B4 below implements habits; B5 implements Dashboard/Analytics. AI Coach remains planned.
 
 Use Node 24.x and the existing pinned lockfile (TypeScript 6 supports the selected ESLint integration):
 
@@ -323,3 +323,25 @@ Limits: the board is paginated rather than a universal daily-board endpoint; vis
 
 
 Verified November 16, 2026: **177 frontend tests** (132 existing plus 45 B4), **8 mocked Chromium smoke tests**, **18 real Spring Boot/PostgreSQL Chromium tests** and **three additional desktop concurrency repeats** passed. Typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures, errors or skips; Flyway V1–V5 and Hibernate validation passed. Full and production npm audits reported zero vulnerabilities. Source, credential and generated-artifact checks passed, and the test launcher was confirmed absent from the production JAR. Focused keyboard, dialog focus/Escape, weekday input, account isolation and 320/375/768-pixel overflow checks passed; desktop/mobile screenshots were reviewed. This is not full assistive-technology or cross-browser certification. No unresolved critical, high or medium B4 review finding remained.
+
+
+## Dashboard and historical analytics (Day 6 B5)
+
+After sign-in, **Dashboard** shows your display name, server reporting week/timezone, task completion, strict habit consistency and five weekly goal rows per page. Links lead to the existing goals, tasks and habits workflows. **Analytics** uses the same metrics with a Monday week selector; leaving it blank requests the current server week. Earlier history can be unavailable and future periods are rejected. No browser-local reporting week is guessed.
+
+- **Tasks:** completed / originally assigned tasks at the exclusive cutoff. The original due-date cohort survives rescheduling and archive; reopened tasks are incomplete. Dates later in the same assigned week can already enter the denominator.
+- **Habits:** successful / eligible started days. Every remaining non-rest scheduled obligation must be complete for a day to succeed. Planned rest is not completion, and future unstarted days are excluded.
+- **Goals:** explicit accepted, non-voided weekly units against that goal's weekly target. Actual units stay exact even above target; the backend caps its percentage at 100%. Missing targets retain units with “No weekly target”, without a bar or average. Goal titles are current metadata; relevant archived goals can appear without an archive label because the response has no status field.
+
+Undefined percentages remain absent, with useful next actions. They never become 0%. Progress bars use server percentages, not current task/habit lists or totals recalculated from one goal page. Goals with different units are never combined into a score. All report boundaries and FROZEN, RECONSTRUCTED or UNFROZEN calendar states come from the response. Provisional reports remain in progress; **closed, not finalized** reports are not immutable snapshots and can change after late commits accepted before their cutoff.
+
+The optional advanced cutoff accepts an exact UTC instant with `Z` and up to nine fractional digits. Select a Monday first; the value is sent unchanged, never converted from a local date. The server enforces start < cutoff <= end and cutoff <= now. Report status describes whether the week has ended, even for an earlier cutoff. Each response is one database snapshot; changing pages can observe later commits.
+
+Queries are account-scoped, cancellable and shared between both screens for the same current selection. Product mutations invalidate analytics; safe network reads retry once, HTTP errors do not retry, and there are no automatic writes. Refresh failures label retained values as an older snapshot. Week changes discard the previous result while loading; drafts survive background refreshes. Returning to Dashboard resets historical selection. No extra metrics request is made just for calendar metadata on these pages.
+
+Run the existing frontend quality commands and `npm run e2e` for mocked smoke tests; run backend Maven `verify`, then `npm run e2e:real` for actual Spring Boot/PostgreSQL Chromium tests. Historical browser cases seed only the disposable database, including a closed DST week and auditable void timestamps; production clock/configuration and V1–V5 are unchanged. No dependencies or charting library were added.
+
+Limitations: report selections/pagination reset on reload, separate pages are separate snapshots, metadata is not fully historical, and unavailable timezone history is never invented. There are no finalized reports, trend series, overall scores, streaks or predictions. Live Google login, full assistive-technology/cross-browser certification, AI Coach and production delivery remain separate gates.
+
+
+Verified November 16, 2026 for B5: **225 frontend tests** (177 baseline plus 48 B5), **8 mocked Chromium smoke tests** and **24 real Spring Boot/PostgreSQL Chromium tests** (18 baseline plus six B5) passed. Typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures/errors/skips; V1–V5 and Hibernate validation passed. Both npm audits reported zero vulnerabilities. Review checked metric/null accuracy, exact totals/cutoffs, reporting context, cancellation, invalidation, session isolation, keyboard focus and responsive overflow. Desktop/mobile Dashboard and historical Analytics screenshots were reviewed. No unresolved critical/high/medium B5 finding remained. Credential/artifact/whitespace checks passed; browser fixtures were absent from production JavaScript and the test launcher from the production JAR. Temporary fixture resources were cleaned up.
