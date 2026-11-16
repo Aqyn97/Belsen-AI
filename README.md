@@ -25,7 +25,8 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | AI coaching | Planned |
 | Foundation automated tests | Implemented; verification results below |
 | React frontend | Accounts, goals, tasks and habits implemented; dashboard/historical analytics implemented |
-| CI and deployment | Planned |
+| Production packaging | Implemented; single-origin JAR and optional runtime image; see B6 below |
+| CI and public deployment | Planned |
 
 The original target for the first working MVP was **November 6, 2026**; it remains an unmet historical target. The roadmap describes acceptance criteria; it is not a claim that those criteria have been met.
 
@@ -34,7 +35,7 @@ The original target for the first working MVP was **November 6, 2026**; it remai
 - Java 21, Spring Boot, Maven, Spring Security and PostgreSQL.
 - A modular monolith with feature-based Java packages and Flyway migrations.
 - React, TypeScript and Vite in a separate frontend directory.
-- One public HTTPS origin: Spring Boot will serve the React production assets and REST API.
+- One HTTPS origin: the B6 production package serves React assets and the REST API through Spring Boot.
 - Verified analytics calculated in Java; optional AI suggestions displayed separately.
 
 ## Local backend setup
@@ -236,6 +237,7 @@ Account linking, password reset, email verification, immutable report finalizati
 - [Architecture](docs/ARCHITECTURE.md): modules, data, API, security and deployment.
 - [Roadmap](docs/ROADMAP.md): seven development days and release criteria.
 - [Decisions](docs/DECISIONS.md): accepted choices, tradeoffs and open questions.
+- [Production setup](docs/DEPLOYMENT.md): verified packaging, HTTPS, proxy boundaries and deployment prerequisites.
 - [Contributing](CONTRIBUTING.md): development and manual Git workflow.
 
 The display identity is **belsen.** Primary yellow `#FACC15`, background `#FAFAF7`, dark text `#171717`, and white surfaces `#FFFFFF` define the implemented account interface and the visual direction for future product pages.
@@ -275,7 +277,7 @@ npm audit --omit=dev
 
 `e2e` serves the production bundle with mocked CSRF/session APIs for shell coverage. `e2e:real` uses Chromium, Vite on localhost:5183, the packaged Spring Boot JAR on loopback:18081 and disposable PostgreSQL 17.11 on a random loopback port. It creates random test accounts, verifies rotation, cookies, profile changes, deep-link reloads, logout/login and account isolation. Its generated database password stays in process environment; no persistent volume or other project's infrastructure is used. Test processes/container/temp JAR are cleaned up. Screenshots, traces, results, dist and node_modules remain ignored.
 
-Production asset packaging and Spring Boot SPA delivery remain a later stage. `npm run build` produces standalone assets; Vite development routing supports browser refreshes. The backend does not broadly permit static routes or swallow private API errors in an SPA fallback.
+At the B2 checkpoint, production asset packaging and Spring Boot SPA delivery remained later work. B6 below implements the combined package and exact document routes. Vite still supports local development; API errors never fall through to HTML.
 
 Verified November 14, 2026: typecheck, ESLint, **74 frontend tests**, production build, **8 mocked smoke tests**, **6 real-backend Chromium tests**, and **231 backend tests** (50 unit + 181 PostgreSQL integration) passed, with no failures or skips. Flyway V1–V5 and Hibernate validation passed. Full/production npm advisory audits reported zero vulnerabilities. Keyboard navigation, labels, visible focus, error feedback, responsive overflow and account screenshots were reviewed; this is focused accessibility coverage, not a full assistive-technology certification.
 
@@ -345,3 +347,23 @@ Limitations: report selections/pagination reset on reload, separate pages are se
 
 
 Verified November 16, 2026 for B5: **225 frontend tests** (177 baseline plus 48 B5), **8 mocked Chromium smoke tests** and **24 real Spring Boot/PostgreSQL Chromium tests** (18 baseline plus six B5) passed. Typecheck, ESLint and production build passed. Full Maven verification passed **231 tests** (50 unit, 181 PostgreSQL integration), with zero failures/errors/skips; V1–V5 and Hibernate validation passed. Both npm audits reported zero vulnerabilities. Review checked metric/null accuracy, exact totals/cutoffs, reporting context, cancellation, invalidation, session isolation, keyboard focus and responsive overflow. Desktop/mobile Dashboard and historical Analytics screenshots were reviewed. No unresolved critical/high/medium B5 finding remained. Credential/artifact/whitespace checks passed; browser fixtures were absent from production JavaScript and the test launcher from the production JAR. Temporary fixture resources were cleaned up.
+
+
+## Production integration (Day 6 B6)
+
+Build the complete site with **Node 24**, Java 21 and Docker:
+
+```sh
+./scripts/build-production.sh
+```
+
+This runs locked frontend installation and checks, builds React, then packages and verifies the combined Spring Boot JAR with Maven's `spa` build profile. `application-local.yml`, test fixtures and clock launchers are excluded from the production artifact. Serve it with the `production` runtime profile, required PostgreSQL credentials, an exact `BELSEN_PUBLIC_BASE_URL` HTTPS origin and an external PKCS12 certificate. No Vite proxy is used in production. The optional Dockerfile packages that verified JAR into a pinned, non-root Java 21 runtime image.
+
+Only the implemented frontend document routes receive HTML. HTML stays uncached; controlled hashed assets have explicit types and immutable caching. Unknown API/actuator/private-file routes never fall through to the SPA. Private APIs retain session ownership and CSRF; production enforces HTTPS and secure cookies, ignores forwarding headers by default, and pins Google callbacks to the configured origin. CSP/permissions headers and production SQL-log restrictions complement existing security controls.
+
+Use `npm run e2e:packaged` in `frontend/` after the combined build for actual production-profile JAR/PostgreSQL browser tests over local HTTPS, including automated axe checks. Existing mocked and Vite/real-backend browser suites remain separate. The packaged harness uses the normal production clock, server-derived dates and a temporary self-signed certificate; only Playwright ignores its trust error. It does not claim public TLS, a live Google flow or accessibility certification.
+
+See [production setup and deployment prerequisites](docs/DEPLOYMENT.md) for environment variables, direct TLS, restricted proxy handling, build/test commands, container use and remaining launch decisions. No public deployment or AI Coach is included. Public registration/email verification/password recovery policy, distributed throttle behavior, CI, database backups/restore, real provider credentials, ingress and certificate renewal still need an operator's review.
+
+
+Verified November 16, 2026 for B6 under **Node 24.22.1 / Java 21**: **248 Maven tests** (67 unit, 181 PostgreSQL integration; all 231 baseline cases retained), **225 frontend tests**, **8 mocked Chromium cases**, **24 real-backend Chromium cases** and **6 packaged-production HTTPS Chromium cases** passed. Typecheck (including packaged test sources), ESLint, production build and both npm audits passed; audits reported zero vulnerabilities. Packaged flows used the production JAR/system clock, actual PostgreSQL and local HTTPS without Vite. Axe WCAG A/AA scans reported zero violations on the scanned major screens and confirmation dialog; keyboard focus and desktop/mobile screenshots were reviewed. This is focused evidence, not accessibility certification. The runtime Docker image built successfully, repeated JAR packaging produced an identical checksum, and production-JAR/credential/artifact/whitespace checks passed. Missing TLS configuration was rejected at startup. Temporary browser resources were cleaned up. No unresolved critical/high/medium B6 finding remained; the prerequisites in the deployment guide still apply before public launch.

@@ -6,6 +6,8 @@ import com.belsenai.identity.security.GoogleOidcUserService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -45,9 +47,11 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http, ProblemResponses problems,
             CsrfTokenRepository csrf, SecurityContextRepository contexts, SessionAuthenticationStrategy strategy,
             ObjectProvider<ClientRegistrationRepository> clients, ObjectProvider<GoogleOidcUserService> oidc,
-            @Value("${belsen.google.enabled:false}") boolean googleEnabled) throws Exception {
+            @Value("${belsen.google.enabled:false}") boolean googleEnabled, Environment environment) throws Exception {
         if (googleEnabled) { clients.getObject(); }
         http.authorizeHttpRequests(authorize -> {
+            authorize.requestMatchers(HttpMethod.GET, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/settings", "/assets/*").permitAll();
+            authorize.requestMatchers(HttpMethod.HEAD, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/settings", "/assets/*").permitAll();
             authorize
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
@@ -67,6 +71,10 @@ public class SecurityConfig {
             }
             authorize.anyRequest().denyAll();
         });
+        if (environment.matchesProfiles("production")) http.redirectToHttps(Customizer.withDefaults());
+        http.headers(headers -> headers
+            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"))
+            .permissionsPolicyHeader(policy -> policy.policy("camera=(), microphone=(), geolocation=()")));
         http.csrf(config -> config.csrfTokenRepository(csrf));
         http.securityContext(config -> config.securityContextRepository(contexts).requireExplicitSave(true));
         http.sessionManagement(config -> config.sessionAuthenticationStrategy(strategy));

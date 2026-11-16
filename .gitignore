@@ -4,6 +4,9 @@
 !.env.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.jks
 
 # Java and Maven outputs
 target/

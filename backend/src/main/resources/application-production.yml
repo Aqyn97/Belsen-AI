@@ -1,0 +1,30 @@
+# Direct HTTPS is the safe default. See docs/DEPLOYMENT.md for a restricted TLS proxy.
+belsen:
+  public-base-url: ${BELSEN_PUBLIC_BASE_URL}
+  google:
+    redirect-uri: ${BELSEN_PUBLIC_BASE_URL}/login/oauth2/code/google
+server:
+  address: ${BELSEN_BIND_ADDRESS:127.0.0.1}
+  shutdown: graceful
+  ssl:
+    enabled: ${BELSEN_TLS_ENABLED:true}
+    key-store: ${BELSEN_TLS_KEY_STORE:}
+    key-store-type: PKCS12
+    key-store-password: ${BELSEN_TLS_KEY_STORE_PASSWORD:}
+  forward-headers-strategy: ${BELSEN_FORWARD_HEADERS_STRATEGY:none}
+  tomcat:
+    remoteip:
+      internal-proxies: ${BELSEN_TRUSTED_PROXY_REGEX:127\.0\.0\.1|::1|0:0:0:0:0:0:0:1}
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  datasource:
+    hikari:
+      maximum-pool-size: ${BELSEN_DB_POOL_MAX:10}
+      minimum-idle: ${BELSEN_DB_POOL_MIN:2}
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: "OFF"
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.springframework.security: WARN

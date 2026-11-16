@@ -188,6 +188,22 @@ Verified November 16, 2026: 225 frontend tests (177 preserved plus 48 new), 8 mo
 
 No B6, coaching, immutable snapshot finalization or production deployment is started. Full assistive-technology/cross-browser and live Google verification remain separate gates.
 
+### Day 6 B6 checkpoint
+
+Production integration packages the existing React app and REST API in one JAR. No AI Coach or public deployment is started.
+
+Acceptance criteria:
+
+- Exact SPA document routes support refresh, while APIs, OAuth, actuator and private files never receive catch-all HTML.
+- HTML is no-store; hashed assets have explicit types and immutable caching. Local Vite proxy behavior remains available.
+- Production startup rejects missing origin/assets/database configuration, the local profile, weakened cookies, callback-origin mismatch and invalid TLS/proxy combinations.
+- Preserve session/CSRF/ownership/numeric/concurrency/reporting behavior, migrations V1–V5 and Hibernate validate; keep secrets and SQL values out of assets/logs.
+- Produce a repeatable combined build under Node 24/Java 21, exclude local config/test launchers from the JAR and build the optional non-root runtime image.
+- Retain 225 frontend tests and all 231 backend baseline tests. Pass all browser suites, including packaged production-profile HTTPS/PostgreSQL flows and axe scans across major pages.
+- Document exact verification results, direct TLS, restricted proxy trust, environment variables, release prerequisites and remaining limitations before publication.
+
+Verified November 16, 2026 for B6: 248 Maven tests (67 unit, 181 PostgreSQL integration; all 231 baseline retained), 225 frontend tests, 8 mocked Chromium tests, 24 real-backend Chromium tests and 6 production-JAR HTTPS tests passed. Typecheck, lint, build, both zero-vulnerability npm audits, JAR/artifact/credential/whitespace checks, runtime image build and repeat-package checksum comparison passed. Packaged axe scans reported no violations across scanned major pages/dialog, with focused keyboard, responsive and screenshot review. No unresolved critical/high/medium B6 finding remained. No public deployment, live Google or full accessibility/cross-browser certification is claimed.
+
 ## Day 7: coaching and release
 
 Acceptance criteria:

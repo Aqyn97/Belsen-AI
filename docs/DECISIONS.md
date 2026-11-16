@@ -175,3 +175,12 @@ Closed results remain CLOSED_UNFINALIZED. REPEATABLE READ prevents mixed commits
 Use fixed relative OAuth destinations `/auth/callback` and `/auth?error=google`. Preserve Spring state/nonce/signature verification and reject email collisions. A public Vite build flag reveals the Google link only for configured deployments; secrets remain backend-only. Keep the development proxy Host and registered browser-facing callback consistent. This introduces no CORS, proxy trust, cookie or API authorization relaxation. Real Google verification remains external work.
 
 Native forms and shared fields avoid additional dependencies. Validate Unicode code points and UTF-8 bytes without trimming passwords. Settings edit only existing name/timezone fields; prospective calendar conflicts remain server decisions. No production SPA packaging/fallback or product workflows are authorized in B2. Real PostgreSQL-backed Chromium journeys complement rather than replace mocked component/shell tests.
+
+
+## D21: production SPA package and explicit transport boundary
+
+**Implemented in Day 6 B6.** Keep one Spring Boot JAR, a small Maven `spa` resource profile and a root verification script rather than add a second public server. Serve only named frontend documents and controlled hashed assets; deny all other paths through the existing security boundary. HTML is no-store, immutable cache headers apply only to content-hashed assets, and default static-file scanning is disabled. Production packaging excludes local configuration and all test code.
+
+Require a production HTTPS origin and secure session settings. Direct TLS is the default; native forwarding is opt-in for a controlled, privately reachable proxy and cannot replace TLS without explicit configuration. Keep existing CSRF, session rotation, ownership and historical metric rules. Pin production Google callbacks to the configured origin and preserve mock-provider versus live-provider evidence. Add CSP/permissions restrictions and suppress sensitive Hibernate SQL diagnostics in production. Use one pinned test-only axe dependency to check actual packaged workflows; do not add a charting/runtime dependency.
+
+The optional runtime image is non-root and digest-pinned. Certificate/secret injection, real ingress, database backups, public registration/recovery policy, live Google, CI automation and provider vulnerability monitoring remain deployment prerequisites. Local self-signed HTTPS and automated accessibility scans are evidence for this package, not public deployment or certification.

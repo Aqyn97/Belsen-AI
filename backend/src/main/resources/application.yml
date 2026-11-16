@@ -17,12 +17,16 @@ spring:
   flyway:
     enabled: true
     clean-disabled: true
+  web:
+    resources:
+      add-mappings: false
   session:
     timeout: ${BELSEN_SESSION_TIMEOUT:30m}
     jdbc:
       initialize-schema: never
 server:
   port: ${BELSEN_SERVER_PORT:8081}
+  forward-headers-strategy: none
   servlet:
     session:
       cookie:
