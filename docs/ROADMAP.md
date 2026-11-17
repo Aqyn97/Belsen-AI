@@ -217,8 +217,40 @@ Acceptance criteria:
 
 Dependencies: provider/model choice, funded usage limit, hosting access, production Google configuration and release-ready core features.
 
+### Day 7A: AI Coach design checkpoint
+
+The [AI Coach design](AI_COACH_DESIGN.md) proposes a user-triggered, evidence-backed prioritization assistant. It reuses one existing analytics snapshot, discloses bounded goal coverage and keeps verified metrics separate from AI prioritization. No Coach endpoint, provider integration, migration or UI is implemented by this checkpoint.
+
+Proposed implementation sequence, pending approval:
+
+- **B1:** typed contracts, trusted snapshot/candidates and reviewed request/quota persistence; PostgreSQL ownership, CSRF, precision, snapshot and concurrency tests.
+- **B2:** one approved provider adapter, strict output validation, timeouts and durable spending safeguards; deterministic fake-provider tests with zero paid calls.
+- **B3:** accessible Coach page, explicit analysis action, evidence cards and normal navigation to existing workflows; no automatic product changes or paid page-load calls.
+- **B4:** real-backend and packaged HTTPS browser verification, accessibility/security review and final documentation; preserve all B6 regression tests.
+
+Provider/model, privacy terms, funding, numerical limits and the proposed new migration/retention policy require approval. B1–B4 are not authorized by Day 7A. Public deployment, live Google verification and CI remain separate release requirements; this plan does not mark the broader Day 7 acceptance criteria complete.
+
 ## Release risks and response
 
 The largest risks are analytics edge cases, OAuth configuration, provider access, deployment constraints and too much integration work arriving late. Obtain credentials and hosting access early. Keep visual polish small, use focused work packages and resolve integration failures as they appear.
 
 All approved MVP areas remain release targets. Do not silently drop Google sign-in or coaching and call the full MVP complete. If acceptance criteria cannot be met by November 6, record the gap and request an explicit scope/date decision. Security, ownership checks and correct reporting are release gates.
+
+
+### Historical Day 7 B1 interrupted checkpoint — recovered below
+
+B1 backend evidence/API and operational persistence foundations are partially implemented and uncommitted. Status is NOT_CONFIGURED; no AI provider calls, generated advice or frontend exist. The owner selected 24-hour replay plus 32-day tombstones. See AI_COACH_DESIGN.md for actual scope and remaining gaps.
+
+Fresh Maven verification compiled successfully and passed 69 unit tests, but all 11 PostgreSQL integration classes failed initialization because Docker Desktop's daemon/socket was unavailable. No migration/database/security integration success is claimed. Finish integration coverage and review, run full verification with Docker, and only then consider the authorized B1 commit/push. B1 is not complete; B2–B4 remain unstarted.
+
+
+### Day 7 B1 recovered foundation
+
+Implemented the authenticated NOT_CONFIGURED status, bounded evidence preparation and unavailable analysis contracts; Java-only candidate generation; V6 durable request/UTC quota foundations; canonical hashing; safe unavailable-request replay; 24-hour expiry and 32-day tombstones; database-atomic admission/reservations; and bounded cleanup preserving uncertain operations. No provider, paid request, generated recommendation text or Coach frontend exists.
+
+B1 result replay covers safe unavailable outcomes and request identity. Completed AI result storage/replay, provider-priced token reservations, provider configuration and live billing safeguards remain B2 dependencies. Reservations are conservatively retained on abandonment. Operators must reconcile uncertain operations; automatic cleanup never deletes them. See AI_COACH_DESIGN.md for exact implemented endpoints, maintenance and limitations.
+
+Final verification evidence follows the release check. B2–B4 remain unstarted and require separate authorization.
+
+
+Verified B1 recovery, November 17, 2026: final `./backend/mvnw -B -ntp -f backend/pom.xml -Pspa clean verify` passed **267 tests: 71 unit and 196 PostgreSQL integration**, zero failures/errors/skips. All 248 B6 cases remain; four Coach unit tests and fifteen Coach integration tests were added. Fresh PostgreSQL 17.11 databases applied V1–V6, Flyway validation and Hibernate schema validation passed. Node 24 frontend typecheck, ESLint, 225 tests and production build passed. Browser suites were not rerun for this backend-only work; no new browser verification is claimed. Production JAR inspection found the SPA and no local configuration/test launcher/test fixtures. Credential-pattern, documentation-link and whitespace checks passed. No provider call or generated advice occurred. B1 is complete as a disabled backend foundation; B2 requires separate approval and provider/model/privacy/funding decisions.

@@ -66,6 +66,8 @@ public class SecurityConfig {
             authorize.requestMatchers(HttpMethod.PUT,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
             authorize.requestMatchers(HttpMethod.DELETE,"/api/v1/habits/{id}/completions/{date}","/api/v1/habits/{id}/rest-days/{date}").authenticated();
             authorize.requestMatchers(HttpMethod.GET,"/api/v1/analytics/dashboard").authenticated();
+            authorize.requestMatchers(HttpMethod.GET,"/api/v1/coach/status").authenticated();
+            authorize.requestMatchers(HttpMethod.POST,"/api/v1/coach/evidence","/api/v1/coach/analyses").authenticated();
             if (googleEnabled) {
                 authorize.requestMatchers("/oauth2/authorization/google", "/login/oauth2/code/google").permitAll();
             }
@@ -76,6 +78,7 @@ public class SecurityConfig {
             .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"))
             .permissionsPolicyHeader(policy -> policy.policy("camera=(), microphone=(), geolocation=()")));
         http.csrf(config -> config.csrfTokenRepository(csrf));
+        http.addFilterAfter(new com.belsenai.coach.CoachBodyLimit(problems), org.springframework.security.web.access.intercept.AuthorizationFilter.class);
         http.securityContext(config -> config.securityContextRepository(contexts).requireExplicitSave(true));
         http.sessionManagement(config -> config.sessionAuthenticationStrategy(strategy));
         http.requestCache(config -> config.requestCache(new NullRequestCache()));
