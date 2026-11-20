@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2, goals/tasks in B3 and habits in B4; dashboard/historical analytics in B5; production SPA integration is implemented in B6; immutable finalization, coach and public deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
+Status: backend foundation, authentication and profiles implemented; Google OIDC tested against a mock provider, with live browser verification pending. Goals and explicit progress are implemented in Day 3 Stage B; tasks are implemented in Stage C; habit persistence/calendar support and secure habit operations are implemented in Day 4 B1/B2; the authenticated analytics dashboard API is implemented in Day 5 B1; the React shell/API foundation is implemented in Day 6 B1 and account authentication/settings in Day 6 B2, goals/tasks in B3 and habits in B4; dashboard/historical analytics in B5; production SPA integration is implemented in B6; Day 7 B1–B3 implement trusted Coach evidence, optional Groq ranking and its interface; immutable finalization and public deployment remain planned. This document describes the target MVP. See `DECISIONS.md` for tradeoffs and unresolved choices.
 
 ## System shape
 
@@ -26,7 +26,7 @@ React handles rendering, forms, accessibility, navigation and typed API calls. J
 | `goals` | Goal targets, weekly plans, explicit progress and archiving |
 | `tasks` | Current task state and minimal reporting events |
 | `habits` | Effective schedules, daily occurrences and completion |
-| `analytics` | Deterministic calculations and closed-week summaries |
+| `analytics` | Deterministic snapshot calculations; immutable closed-week summaries remain planned |
 | `coach` | Summary preparation, quota reservations, provider adapter and response validation |
 | `common` | Shared error handling and narrowly scoped configuration |
 
@@ -49,7 +49,7 @@ Use UUID primary keys, UTC instants for audit events, local dates for user calen
 | `users` | Normalized unique email, nullable password hash for Google-only users, IANA timezone, timestamps |
 | `external_identities` | User FK, provider, provider subject; unique `(provider, subject)` |
 | `goals` | Owner FK, title, positive total target, unit, optional deadline, archive timestamp |
-| `goal_weekly_plans` | Goal FK, local week start, positive planned units; unique `(goal_id, week_start)` |
+| `goal_weekly_plans` | Goal FK, local week start, positive planned units; unique `(goal_id, reporting_week_id)` |
 | `goal_progress_entries` | Goal FK, positive units, effective local date, recorded instant, optional void timestamp |
 | `tasks` | Owner FK, optional goal FK, original/current due dates, optional positive duration in minutes, status, archive timestamp |
 | `task_events` | Task FK, event type, recorded instant and required state/scheduling changes |
@@ -58,14 +58,16 @@ Use UUID primary keys, UTC instants for audit events, local dates for user calen
 | `habit_checkins` | Lazy occurrence, owner, local date, frozen reporting week and schedule version, current completion/rest flags; unique `(habit_id, local_date)` |
 | `habit_checkin_events` | Append-only completion/undo/rest state, acceptance instant and occurrence sequence |
 | `reporting_timezone_revisions` | Account reporting-timezone policy, effective Monday, acceptance instant and account sequence |
-| `weekly_summary_snapshots` | Owner FK, week start, timezone, cutoff, raw counts/units, percentages and calculation version |
-| `coach_requests` | Owner FK, quota date, status, reservation instant and minimal provider usage metadata |
+| `weekly_summary_snapshots` (planned, absent) | Future immutable finalization; no current table |
+| `coach_requests` | Owner/submission UUID, fingerprint, lifecycle, dispatch/deadline and replay/retention instants |
+| `coach_daily_usage` | UTC account/global attempt and reservation ledger |
+| `coach_results` | Immutable owner-scoped original evidence and validated selected IDs; 24-hour replay |
 
 Users own goals, tasks, habits, reports and coaching requests. Child records inherit ownership through their parent. Every access must be owner-scoped, including references between resources. Check that an associated goal belongs to the task owner. Database foreign keys protect relationships; service checks protect ownership.
 
 Use check constraints for positive targets, progress and durations. Validate allowed states and weekday values. Index owner/date filters, task original due dates, `(task_id, recorded_at)`, habit/date lookups and goal progress dates. Use unique per-habit schedule sequences (multiple accepted revisions may share an effective date) and unique snapshot owner/week. Avoid indexing every field without a query need.
 
-Use Spring Session JDBC tables for persistent server-side sessions when authentication is implemented. Configure their creation through reviewed migrations rather than unmanaged production schema initialization.
+Spring Session JDBC tables persist server-side sessions. Configure their creation through reviewed migrations rather than unmanaged production schema initialization.
 
 ### Minimal history
 
@@ -484,3 +486,12 @@ Verified Day 7 B3, November 20, 2026: Java 21.0.11/Node 24.22.1. Full production
 The initial concurrent legacy browser runs reported two packaged expiry failures and one real historical-fixture failure because both suites matched the same database-name prefix. No application assertions or session/history mutations were bypassed. Separate prefixes/selectors corrected the test isolation; complete reruns passed. The final production JAR excludes local configuration, test launchers and fixture assets, and production JS contains no provider credentials, endpoint or test fixtures. Credential/artifact/whitespace/documentation checks passed. No unresolved critical/high/medium issue remained within B3 scope.
 
 Recovery state is private in-memory state with a 24-hour cache retention setting; sign-out/account changes clear it and a full reload loses it. Browser cancellation is not proof that remote inference stopped. No live Groq inference, actual Free-plan/ZDR verification, public deployment or B4 work occurred. Enabled UI workflows were verified with deterministic API fixtures; real-backend Coach browser coverage used the disabled provider. B4 remains a separately approved final integration stage.
+
+
+## Day 7 B4 release boundary
+
+JSON API mutations are bounded before MVC decoding: 16 KiB generally and 4 KiB for Coach evidence/analysis, including chunked bodies. DTO field/precision validation remains independent. This bounds one request, not total traffic; ingress request timeouts, connection limits and abuse controls remain deployment responsibilities. Logout is handled by Spring Security without JSON decoding.
+
+Definite pre-dispatch Coach validation failures allow a new explicit submission. Potential dispatch/transport errors retain the original key and never trigger automatic retry. Current goal metadata is labeled separately from historical units. A test-only external launcher supplies deterministic ranking for real HTTPS/PostgreSQL browser tests; it is not packaged or scanned in production.
+
+See [release evidence](RELEASE_READINESS.md) and [operations](DEPLOYMENT.md). Existing schema migrations and provider policy are unchanged.

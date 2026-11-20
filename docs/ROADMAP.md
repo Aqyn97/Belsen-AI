@@ -1,5 +1,7 @@
 # Seven-day roadmap
 
+**Current release status:** accounts, goals, tasks, habits, dashboard/historical analytics, optional Coach ranking and the Coach interface are implemented. B4 is the final release audit; its fresh evidence and decision are in [RELEASE_READINESS.md](RELEASE_READINESS.md). Public deployment, live Google/Groq verification, immutable report finalization and CI remain pending. Earlier dated checkpoints below are historical scope/evidence, not current feature labels.
+
 Target MVP date: **November 6, 2026**, using the project owner's Asia/Almaty calendar. This is an ambitious plan, not completed work. The Stage B backend foundation is implemented; verification evidence is recorded below. Authentication and profile code are implemented; live Google browser verification remains pending.
 
 Each day has one main work package. Integrate small frontend slices from Day 3 onward so Day 6 is not the first time the browser meets the API. Review actual evidence before marking criteria complete.
@@ -284,3 +286,12 @@ Verified Day 7 B3, November 20, 2026: Java 21.0.11/Node 24.22.1. Full production
 The initial concurrent legacy browser runs reported two packaged expiry failures and one real historical-fixture failure because both suites matched the same database-name prefix. No application assertions or session/history mutations were bypassed. Separate prefixes/selectors corrected the test isolation; complete reruns passed. The final production JAR excludes local configuration, test launchers and fixture assets, and production JS contains no provider credentials, endpoint or test fixtures. Credential/artifact/whitespace/documentation checks passed. No unresolved critical/high/medium issue remained within B3 scope.
 
 Recovery state is private in-memory state with a 24-hour cache retention setting; sign-out/account changes clear it and a full reload loses it. Browser cancellation is not proof that remote inference stopped. No live Groq inference, actual Free-plan/ZDR verification, public deployment or B4 work occurred. Enabled UI workflows were verified with deterministic API fixtures; real-backend Coach browser coverage used the disabled provider. B4 remains a separately approved final integration stage.
+
+
+### Day 7 B4 release criteria
+
+- Fresh Java 21/Node 24 production build and all unit, PostgreSQL and Chromium suites pass; fixture AI evidence is distinguished from live inference.
+- Production JAR excludes local configuration, fixtures and test launchers; runtime image builds, packaging is reproducible, and secrets/generated outputs are excluded from Git.
+- A disposable logical backup restores V1–V7 schema, representative rows and immutable-event protection. Provider-specific backups/PITR and rollback remain an operator rehearsal before real data.
+- README explains implemented functionality and external limits; operational runbooks cover HTTPS, secrets, monitoring, retention, restore, rollback and uncertain Coach containment.
+- No public release, license choice or live-provider verification is implied. The final decision and exact evidence are in [RELEASE_READINESS.md](RELEASE_READINESS.md).

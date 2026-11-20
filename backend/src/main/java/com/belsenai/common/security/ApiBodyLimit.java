@@ -1,4 +1,4 @@
-package com.belsenai.coach;
+package com.belsenai.common.security;
 
 import java.io.*;
 import jakarta.servlet.*;
@@ -7,13 +7,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.belsenai.common.error.ProblemResponses;
 
 /** Installed after authentication/CSRF, before MVC; chunked bodies are bounded too. */
-public class CoachBodyLimit extends OncePerRequestFilter {
+public class ApiBodyLimit extends OncePerRequestFilter {
     private final ProblemResponses problems;
-    public CoachBodyLimit(ProblemResponses problems) { this.problems=problems; }
+    public ApiBodyLimit(ProblemResponses problems) { this.problems=problems; }
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
-        if(!request.getMethod().equals("POST") || !java.util.Set.of("/api/v1/coach/evidence","/api/v1/coach/analyses").contains(request.getServletPath())) { chain.doFilter(request,response);return; }
-        byte[] body=request.getInputStream().readNBytes(4097);
-        if(body.length>4096) { problems.write(request,response,413,"Coach request exceeds 4096 bytes.");return; }
+        if(!java.util.Set.of("POST", "PUT", "PATCH", "DELETE").contains(request.getMethod()) || !request.getServletPath().startsWith("/api/v1/")) { chain.doFilter(request,response);return; }
+        int limit = java.util.Set.of("/api/v1/coach/evidence", "/api/v1/coach/analyses").contains(request.getServletPath()) ? 4096 : 16384;
+        if (request.getContentLengthLong() > limit) { problems.write(request,response,413,"Request body is too large.");return; }
+        byte[] body=request.getInputStream().readNBytes(limit + 1);
+        if(body.length>limit) { problems.write(request,response,413,"Request body is too large.");return; }
         chain.doFilter(new HttpServletRequestWrapper(request) {
             @Override public ServletInputStream getInputStream() {
                 var input=new ByteArrayInputStream(body);

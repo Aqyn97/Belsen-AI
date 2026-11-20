@@ -4,7 +4,7 @@
 
 Belsen-AI helps people plan daily actions and understand whether they are staying consistent. Its tagline is “Plan better. Stay consistent. Grow.” The product is a web application for people seeking simple personal organization, including those unfamiliar with productivity tools.
 
-The original first-MVP target was November 6, 2026; the complete MVP has not been released. The authentication, goals, tasks and habit backends are implemented. The authenticated analytics dashboard API is also implemented. Account, goal/progress/planning, task and habit interfaces are implemented. Dashboard and historical analytics interfaces are implemented; immutable closed-report finalization and coaching remain planned; Google browser login and deployment remain unverified. The table below describes the target MVP.
+The original first-MVP target was November 6, 2026; the complete MVP has not been released. The authentication, goals, tasks and habit backends are implemented. The authenticated analytics dashboard API is also implemented. Account, goal/progress/planning, task and habit interfaces are implemented. Dashboard and historical analytics interfaces are implemented; optional AI Coach ranking and its interface are implemented, disabled by default; immutable closed-report finalization remains planned; Google browser login and deployment remain unverified. The table below describes the target MVP.
 
 ## Primary journey
 
@@ -16,7 +16,7 @@ The original first-MVP target was November 6, 2026; the complete MVP has not bee
 
 ## MVP scope
 
-| Area | Planned behavior |
+| Area | MVP behavior (see README for current verification status) |
 | --- | --- |
 | Accounts | Registration, login, Google sign-in, secure sessions, logout and a private timezone-aware profile |
 | Goals | Create/edit, target and unit, optional deadline, explicit progress entries, weekly targets and archive |

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -14,7 +14,7 @@ let submissions: { body: Record<string, string>; init: RequestInit }[];
 let respond: (url: string, init: RequestInit) => Response | Promise<Response> | undefined;
 beforeEach(() => { api.clear();submissions = [];respond = () => undefined;vi.stubGlobal('fetch', vi.fn((input, init: RequestInit = {}) => { const url = String(input); if (url.endsWith('/coach/analyses')) submissions.push({ body: JSON.parse(String(init.body)), init }); return Promise.resolve(respond(url, init) ?? (url.endsWith('/csrf') ? jsonResponse({ headerName: 'X-CSRF-TOKEN', token: 'fixture-token' }) : url.endsWith('/me') ? jsonResponse(profileFixture) : url.endsWith('/coach/status') ? jsonResponse({ schemaVersion: 1, noticeVersion: 1, goalLimit: 20, status: 'AVAILABLE' }) : url.endsWith('/coach/analyses') ? jsonResponse(coachFixture(JSON.parse(String(init.body)).submissionId)) : jsonResponse(reportFixture()))); })); });
 afterEach(() => vi.unstubAllGlobals());
-function show() { const client = createQueryClient();render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/app/coach']}><App/></MemoryRouter></QueryClientProvider>);return client; }
+function show(client = createQueryClient()) { render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/app/coach']}><App/></MemoryRouter></QueryClientProvider>);return client; }
 async function ready() { const client = show(); await screen.findByText('Verified progress preview');return client; }
 async function analyze() { await userEvent.click(screen.getByRole('checkbox'));await userEvent.click(screen.getByRole('button', { name: 'Analyze my progress' })); }
 it('loads verified metrics without any automatic analysis and requires consent', async () => { await ready(); expect(submissions).toHaveLength(0); expect(screen.getByRole('button', { name: 'Analyze my progress' })).toBeDisabled(); expect(screen.getByText('33.3%')).toBeVisible(); expect(screen.getByRole('link', { name: 'AI Coach' })).toHaveAttribute('aria-current', 'page'); });
@@ -33,3 +33,29 @@ it('sends no client owner or authoritative metrics', async () => { await ready()
 
 it('network recovery retains the original submission key without retrying automatically', async () => { respond = url => url.endsWith('/coach/analyses') ? Promise.reject(new Error('offline')) : undefined;await ready();await analyze();expect(await screen.findByRole('alert')).toHaveTextContent('may have received');const original = submissions[0]!.body;respond = () => undefined;await userEvent.click(screen.getByRole('button', { name: 'Recover or replay same analysis' }));expect(await screen.findByText('Your focus, grounded in progress')).toBeVisible();expect(submissions[1]!.body).toEqual(original); });
 it('session expiry removes private Coach state and rejects late results', async () => { let finish!: (r: Response) => void;respond = url => url.endsWith('/coach/analyses') ? new Promise(r => { finish = r; }) : undefined;const client = await ready();await analyze();await act(async () => { api.clear();sessionEvents.dispatchEvent(new Event('expired')); });expect(await screen.findByRole('heading', { name: 'Welcome back.' })).toBeVisible();await act(async () => finish(jsonResponse(coachFixture(submissions[0]!.body.submissionId))));expect(client.getQueriesData({ queryKey: ['coach'] })).toEqual([]);expect(screen.queryByText('Your focus, grounded in progress')).not.toBeInTheDocument(); });
+
+it.each([400, 404, 413, 415])('allows a new explicit submission after definite pre-dispatch %s', async code => {
+  respond = url => url.endsWith('/coach/analyses') ? jsonResponse({}, code) : undefined;
+  await ready();await analyze();await screen.findByRole('alert');const original = submissions[0]!.body.submissionId;
+  expect(submissions).toHaveLength(1);
+  if (code === 413 || code === 415) expect(screen.getByRole('alert')).toHaveTextContent('No analysis was started');
+  await userEvent.click(screen.getByRole('button', { name: 'Prepare a new analysis' }));
+  respond = () => undefined;
+  await userEvent.click(screen.getByRole('button', { name: 'Analyze my progress' }));
+  expect(await screen.findByText('Your focus, grounded in progress')).toBeVisible();
+  expect(submissions[1]!.body.submissionId).not.toBe(original);
+});
+it.each([409, 429, 502, 503, 504])('does not discard the recovery key after potentially dispatched %s', async code => {
+  respond = url => url.endsWith('/coach/analyses') ? jsonResponse({}, code) : undefined;
+  await ready();await analyze();await screen.findByRole('alert');
+  expect(screen.queryByRole('button', { name: 'Prepare a new analysis' })).not.toBeInTheDocument();
+  expect(submissions).toHaveLength(1);
+});
+
+it('retains definite rejection recovery after navigating away and back', async () => {
+  respond = url => url.endsWith('/coach/analyses') ? jsonResponse({}, 400) : undefined;
+  const client = await ready();await analyze();await screen.findByRole('alert');cleanup();show(client);
+  expect(await screen.findByRole('button', {name:'Prepare a new analysis'})).toBeVisible();
+  expect(screen.queryByRole('button', {name:'Recover or replay same analysis'})).not.toBeInTheDocument();
+  expect(submissions).toHaveLength(1);
+});

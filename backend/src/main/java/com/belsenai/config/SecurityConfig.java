@@ -78,7 +78,7 @@ public class SecurityConfig {
             .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"))
             .permissionsPolicyHeader(policy -> policy.policy("camera=(), microphone=(), geolocation=()")));
         http.csrf(config -> config.csrfTokenRepository(csrf));
-        http.addFilterAfter(new com.belsenai.coach.CoachBodyLimit(problems), org.springframework.security.web.access.intercept.AuthorizationFilter.class);
+        http.addFilterAfter(new com.belsenai.common.security.ApiBodyLimit(problems), org.springframework.security.web.access.intercept.AuthorizationFilter.class);
         http.securityContext(config -> config.securityContextRepository(contexts).requireExplicitSave(true));
         http.sessionManagement(config -> config.sessionAuthenticationStrategy(strategy));
         http.requestCache(config -> config.requestCache(new NullRequestCache()));

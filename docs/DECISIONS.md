@@ -98,11 +98,10 @@ The original 20 foundation cases are retained. Two MVC cases now assert denial o
 
 | Decision | Needed by | Constraint |
 | --- | --- | --- |
-| Frontend tooling versions | Frontend scaffolding | Backend versions are selected; recheck frontend compatibility before installation |
 | Google project, consent configuration and credentials | Day 2 | Confirm local and production callback configuration and any testing restrictions |
 | Hosting provider, region and domain | Before deployment integration on Day 6 | One HTTPS origin, persistent storage, backups and realistic budget |
 | PostgreSQL hosting version and backup retention | Before production migrations | Match local/test major version; verify restore options |
-| AI provider/model, daily quota, timeout and spending ceiling | Before Day 7 integration | Server-side keys, structured output, explicit cost controls |
+| Actual Groq account, Free-plan/privacy confirmation and live protocol verification | Before enabling Coach | Fixed Groq GPT-OSS model and bounds are implemented; console/account checks remain external |
 | Production throttle/proxy tuning | Before public hosting | Stage C implements single-instance limits and a 30-minute session timeout; deployment policy still needs review |
 | Password recovery, email verification and public registration policy | Before unrestricted public launch | Not currently in approved MVP scope; document and resolve launch limitations |
 
@@ -184,3 +183,12 @@ Native forms and shared fields avoid additional dependencies. Validate Unicode c
 Require a production HTTPS origin and secure session settings. Direct TLS is the default; native forwarding is opt-in for a controlled, privately reachable proxy and cannot replace TLS without explicit configuration. Keep existing CSRF, session rotation, ownership and historical metric rules. Pin production Google callbacks to the configured origin and preserve mock-provider versus live-provider evidence. Add CSP/permissions restrictions and suppress sensitive Hibernate SQL diagnostics in production. Use one pinned test-only axe dependency to check actual packaged workflows; do not add a charting/runtime dependency.
 
 The optional runtime image is non-root and digest-pinned. Certificate/secret injection, real ingress, database backups, public registration/recovery policy, live Google, CI automation and provider vulnerability monitoring remain deployment prerequisites. Local self-signed HTTPS and automated accessibility scans are evidence for this package, not public deployment or certification.
+
+
+## D22: controlled release evidence and operational limits
+
+Day 7 B4 preserves the modular monolith, V1–V7, session/CSRF behavior and fixed free-tier Coach policy. Bound JSON mutation bodies centrally (16 KiB; Coach 4 KiB), including chunked transfer, without adding a dependency. Definite pre-dispatch selection/format failures can prepare a new explicit Coach submission; uncertain dispatch continues to retain the original UUID.
+
+Complement mocked Coach UI tests with real HTTPS/Java/PostgreSQL tests using an external test-only ranking bean, and rehearse logical PostgreSQL backup/restore in a disposable database. These fixtures cannot establish live third-party behavior or production infrastructure recovery.
+
+A controlled initial deployment keeps optional providers disabled until their external reviews pass. Unknown Coach operations retain capacity; safe incident containment disables inference, preserves the ledger and requires separately reviewed forward recovery before re-enabling it. No administrative recovery, CI, license selection or public deployment is implied. See DEPLOYMENT.md and RELEASE_READINESS.md for evidence and launch prerequisites.

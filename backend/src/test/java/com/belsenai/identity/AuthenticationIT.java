@@ -25,6 +25,22 @@ class AuthenticationIT extends PostgresHttpSupport {
     @MockitoSpyBean PasswordEncoder encoder;
     @Autowired JdbcTemplate jdbc;
 
+    @Test void boundsKnownLengthAndChunkedJsonBeforeDeserialization() throws Exception {
+        try (var browser = browser()) {
+            browser.csrf();
+            String oversized = "{\"email\":\"" + "x".repeat(17000) + "\"}";
+            assertThat(browser.request("POST", "/api/v1/auth/register", oversized, true).statusCode()).isEqualTo(413);
+            var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/v1/auth/login"))
+                    .header(browser.header, browser.token).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofInputStream(() -> new java.io.ByteArrayInputStream(
+                            oversized.getBytes(java.nio.charset.StandardCharsets.UTF_8)))).build();
+            var response = browser.client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(413);
+            assertThat(response.body()).doesNotContain("xxxx", "Exception", "password", "SQL");
+            assertThat(browser.request("GET", "/api/v1/me", null, false).statusCode()).isEqualTo(401);
+        }
+    }
+
     @Test void registrationNormalizesEmailHashesPasswordAndPersistsSession() throws Exception {
         String email = email();
         try (var browser = browser()) {

@@ -1,6 +1,6 @@
 # Production integration and deployment preparation
 
-B6 packages the existing website and API into one Spring Boot JAR. No public deployment has been performed. AI Coach, live Google verification, immutable report finalization and CI automation remain outside this checkpoint.
+The website and API ship in one Spring Boot JAR. Day 7 adds optional Coach ranking and its interface, disabled by default. No public deployment has been performed. Live Google/Groq verification, immutable report finalization and CI automation remain pending. Historical checkpoint results below retain their original dates; see RELEASE_READINESS.md for the current audit.
 
 ## Build the combined application
 
@@ -41,7 +41,7 @@ java -jar backend/target/belsen-ai-0.0.1-SNAPSHOT.jar --spring.profiles.active=p
 
 Direct TLS is the production default. Use a real certificate and hostname before exposing the service. The local packaged browser harness generates a short-lived self-signed certificate and ignores its trust error **only in Playwright**, not in the application. It does not test public certificate issuance/renewal.
 
-Missing database settings, missing/invalid origin, absent SPA assets, TLS initialization failure, weakened cookies or an accidental `local` profile prevent production startup. Flyway runs before Hibernate schema validation; schema errors prevent successful startup. V1–V5 remain unchanged, and Spring Session's schema initializer remains disabled. Do not use Hibernate schema updates or Flyway clean in production.
+Missing database settings, missing/invalid origin, absent SPA assets, TLS initialization failure, weakened cookies or an accidental `local` profile prevent production startup. Flyway runs before Hibernate schema validation; schema errors prevent successful startup. V1–V7 are applied without editing existing migrations, and Spring Session's schema initializer remains disabled. Do not use Hibernate schema updates or Flyway clean in production.
 
 ## Restricted reverse proxy option
 
@@ -61,7 +61,7 @@ References: [Spring Boot proxy/TLS configuration](https://docs.spring.io/spring-
 
 ## Session, frontend and API security
 
-The public HTML routes are exactly `/`, `/auth`, `/auth/callback`, `/app` and the six implemented `/app/...` pages. They load the SPA; the existing React gate checks the session and every private API still authenticates the owner. Only GET/HEAD documents and single-segment hashed assets are public. There is no catch-all SPA fallback and no generic static-file mapping. Unknown API/actuator/private-file paths remain JSON errors. OAuth callback/authorization routes remain controlled by the existing Google-enabled condition, never mapped to HTML.
+The public HTML routes are exactly `/`, `/auth`, `/auth/callback`, `/app` and the seven implemented `/app/...` pages. They load the SPA; the existing React gate checks the session and every private API still authenticates the owner. Only GET/HEAD documents and single-segment hashed assets are public. There is no catch-all SPA fallback and no generic static-file mapping. Unknown API/actuator/private-file paths remain JSON errors. OAuth callback/authorization routes remain controlled by the existing Google-enabled condition, never mapped to HTML.
 
 HTML is `no-store`; existing API/security no-store headers remain. Explicit hashed assets receive their MIME type and `public, max-age=31536000, immutable`. Source maps, nested asset paths, unhashed filenames and arbitrary files are not served. Asset hashes are deployment versioning, not authentication: deploy the JAR atomically and expect a long-open older tab to need a reload after an upgrade.
 
@@ -164,3 +164,64 @@ Unknown outcomes keep concurrency capacity indefinitely. HTTP errors are deliber
 Verified B2 recovery, November 20, 2026: Java 21.0.11 and Node 24.22.1. `./backend/mvnw -B -ntp -f backend/pom.xml -Pspa clean verify` passed **286 tests: 80 unit and 206 PostgreSQL integration**, zero failures/errors/skips. All 267 B1 cases remain; nine protocol tests and ten ranking integration tests were added. Fresh PostgreSQL 17.11 databases applied and validated V1–V7; Hibernate schema validation passed. Coverage includes separate-JVM replay, atomic completion rollback, concurrent duplicates, owner isolation, free-attempt quotas, retention and safe uncertain outcomes. Frontend typecheck, ESLint, 225 tests and production build passed. Chromium passed eight mocked shell cases and six real production-JAR HTTPS desktop/mobile cases, including scoped axe checks. The separate 24-case Vite/real-backend browser suite was not rerun; packaged HTTPS regressions cover the production delivery/configuration changes, while provider behavior is verified through Java local HTTP/PostgreSQL tests. No browser AI UI or live-provider verification is claimed.
 
 Production artifact inspection confirmed SPA/V7 inclusion and absence of local configuration, tests and both test launchers. Credential/generated-artifact/whitespace checks and documentation-link review passed. Final source review found no unresolved critical/high/medium issue in B2 scope. Operator Free-plan/ZDR confirmations and a separately authorized synthetic live check remain external prerequisites; the feature stays disabled by default. Uncertain outcomes deliberately retain capacity and require reviewed operator recovery. No live paid/free inference, public deployment or B3 work occurred.
+
+
+## Controlled deployment plan
+
+Use one application instance and one PostgreSQL 17 service in the same region, behind a controlled HTTPS ingress or direct TLS. No separate public frontend server is needed. Keep PostgreSQL private, require certificate-verified database TLS for remote connections, and use provider-managed persistent storage. The application filesystem can be ephemeral; never keep backups or secrets there. Local Compose is development infrastructure, not a public database deployment.
+
+Start with an explicitly budgeted 1–2 GiB memory allocation and a modest CPU allocation, then measure startup, heap/RSS, GC, report latency and pool saturation under representative data. These are sizing estimates, not measured capacity claims. Set container memory/CPU limits, Java heap headroom, ingress JSON/body/time/connection limits and an adequate startup grace period. Hikari defaults to ten connections per instance; reserve database connections for migration/administration and choose limits within the hosting plan. Do not add replicas without redesigning the in-memory auth throttle.
+
+Use a secret manager or protected injected environment for database, TLS, Google and Coach credentials. Use a dedicated application database role, never a PostgreSQL superuser; the current single datasource also runs Flyway, so migration/DDL privileges remain a deliberate MVP compromise. Restrict its network and administrative access. Test role permissions, extension availability and migration execution on the selected provider before launch.
+
+`/api/v1/health` is process liveness only. Successful startup proves initial database/migration validation, not continuous database readiness. Monitor synthetic private read journeys separately, startup failures, 5xx/latency, pool/DB capacity, backup age, TLS renewal, auth 429s and Coach unknown counts. Keep bounded access-controlled logs without bodies, SQL bind values, cookies or Authorization headers. Alert on any unknown Coach outcome. Let SIGTERM complete the 30-second graceful shutdown; give the host at least 35 seconds.
+
+Public registration currently has rate limits but no verification, recovery or invite mode. For a controlled demonstration, restrict the entire origin at ingress to an agreed audience. This is an operator access policy, not an implemented invite feature. Do not open unrestricted registration without explicitly accepting the limitations and designing abuse/recovery policy.
+
+### Hosting evaluation (reviewed November 20, 2026)
+
+- **Render:** managed TLS and a Docker service fit the single-origin model. Its [free service documentation](https://render.com/docs/free) warns against production use: idle apps sleep and free PostgreSQL expires after 30 days. Use only a disposable preview, or select a durable budgeted plan with backups. Review actual proxy peer addresses before enabling native forwarding.
+- **Neon:** [plan documentation](https://neon.com/docs/introduction/plans) offers managed PostgreSQL with free allowances, scale-to-zero and limited restore history. It does not host this Java application. Verify PostgreSQL 17 support, direct JDBC/TLS connectivity, connection caps, region, retention and current allowances; keep independent backups.
+- **Fly.io:** [trial documentation](https://docs.fly.io/about/free-trial) describes time/credit limits and stopped machines when credits expire. It is a trial, not a permanent free hosting guarantee. A single machine can host the container, but durable database service, ingress trust and budget need explicit review.
+
+Recommendation: one small managed container service plus durable managed PostgreSQL, with an owner-approved budget. A single VPS is an alternative with more patching, TLS and backup responsibility. No host/account was provisioned and no pricing or permanent-free promise is made.
+
+## Backup, restore and rollback runbook
+
+Assign an owner, encrypted off-host storage, access policy and retention before real data is accepted. Proposed controlled-demo objectives are RPO 24 hours and RTO two hours; these are targets requiring a timed provider-specific drill, not a tested SLA. Schedule daily logical backups and pre-migration backups; enable provider point-in-time recovery where available. Keep at least seven daily backups initially and review legal/privacy retention before expanding it. A backup on the database's own volume is insufficient. Monitor backup success and rehearse restore.
+
+Use PostgreSQL 17 client tools and a protected `.pg_service.conf`/`.pgpass` or equivalent secret injection; never put passwords in command arguments or paste them in chat. Example service names below are operator configuration, not repository credentials:
+
+```sh
+pg_dump --dbname=service=belsen-backup --format=custom --file=/secure-backups/belsen.dump
+pg_restore --list /secure-backups/belsen.dump
+pg_restore --dbname=service=belsen-restore --no-owner --exit-on-error /secure-backups/belsen.dump
+```
+
+Encrypt and checksum the backup before uploading it to protected storage. Restore only into a **new empty isolated database**, with production traffic and Coach disabled. Recreate the intended role/ownership/permissions separately; `--no-owner` does not reproduce grants or role management. Verify all seven Flyway history/checksums with the exact release artifact, Hibernate validation, representative counts, foreign keys, immutable history triggers, profile ownership and reports. Test startup and a private login journey against that database. The disposable DatabaseRestoreIT checks real pg_dump/pg_restore, row/schema counts, V1–V7 history and event UPDATE rejection; it does not prove an off-site backup, provider PITR or production recovery time.
+
+Invalidate restored sessions **before** permitting access: in the isolated restored database, remove `spring_session_attributes`, then `spring_session`, within one transaction. Do not restore previously active authenticated sessions to public service. This is intentional operator recovery work, never an automatic startup action. Keep Coach request/tombstone/usage records; a stale backup can omit a previously dispatched call. Therefore keep inference disabled until provider activity since the backup has been reconciled. Never redispatch because a restored key appears absent.
+
+For an application-only rollback, retain the previous verified JAR/image digest and configuration, stop writes, back up the database, and confirm the previous application is compatible with the **current** schema in an isolated rehearsal. Prefer a forward fix. Flyway migrations have no down scripts; never edit applied SQL, use `repair` to hide a mismatch, or run `clean`. A schema/data rollback needs a separately approved restore/cutover, a measured write-loss window and explicit RPO acceptance. Keep the previous database isolated for investigation; do not delete it during rollback.
+
+## Uncertain Coach operations: containment and recovery
+
+Unknown outcomes are deliberately fail-closed: they retain one of two global slots and their account slot indefinitely. Ordinary replay never dispatches again. A Retry-After is a minimum delay, not a promise that capacity will recover. Known dispatched HTTP errors are also treated conservatively. This is an availability limitation, not a billing reconciliation implementation.
+
+1. Disable Coach (`BELSEN_COACH_ENABLED=false`) and restart the single app; normal product workflows stay usable. If needed revoke the provider key in its console. Do not rely on a browser abort to cancel a provider request.
+2. Take a protected database backup. With a read-only operator connection, inspect `owner_id`, `submission_id`, state, deadline and dispatch/finish instants from `coach_requests WHERE state='OUTCOME_UNKNOWN'`, plus current UTC usage. Treat UUIDs as private operational metadata and restrict incident records. Do not log prompts, keys or provider payloads.
+3. Review actual Groq usage/billing and request records in the console. Record the evidence, affected keys, time range and whether the outcome can be established. Console uncertainty means **keep disabled**. No application flag verifies actual Free-plan or retention status.
+4. There is **no supported in-place reconciliation command** in this release. V6's transition guard forbids reopening/retagging unknown rows. Do not delete rows/tombstones, disable triggers, repurpose COMPLETED/FAILED_PRE_DISPATCH or manufacture a result. Restoring a database to evade the ledger is unsafe.
+5. If inference must resume after an unknown outcome, require a separately reviewed forward migration/tool with an auditable resolved state, preserved fingerprints/retention and tests proving no redispatch or double admission. Review the incident and provider evidence before enabling a fresh credential. Until then, ship the controlled demo with Coach disabled.
+
+This containment procedure is safe but does not restore inference capacity. Automatic administrative recovery is intentionally absent. If enabled-Coach continuous availability is a release requirement, this limitation blocks that deployment configuration.
+
+## Controlled launch sequence (separate approval required)
+
+1. Owner approves host/region/budget, domain, license/visibility and restricted-audience policy.
+2. Provision durable PostgreSQL, backup access and one privately reachable app; inject secrets outside Git. Keep Google and Coach disabled initially.
+3. Rehearse migrations, full restore and rollback using the chosen provider and intended non-superuser role.
+4. Configure domain, certificate renewal and exact HTTPS origin; validate proxy stripping/trust and firewall isolation.
+5. Deploy the reviewed image/JAR only after separate public-deployment authorization; run secure-cookie/CSRF/session/ownership/deep-link/health smoke checks through the real ingress.
+6. Enable Google only after exact callback/consent setup and a separately verified real sign-in. Enable Groq only after actual Free-plan/no-paid-billing/privacy review and separately authorized synthetic live verification, accepting the fail-closed recovery limitation above.
+7. Monitor the restricted audience, backup age, auth abuse and database capacity. Expand registration only through a separate reviewed policy.

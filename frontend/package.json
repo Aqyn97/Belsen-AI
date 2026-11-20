@@ -16,6 +16,7 @@
     "e2e": "playwright test",
     "e2e:real": "playwright test --config playwright.real.config.ts",
     "e2e:packaged": "playwright test --config playwright.packaged.config.ts",
+    "e2e:coach:real": "playwright test --config playwright.coach-real.config.ts",
     "e2e:coach": "playwright test --config playwright.coach.config.ts"
   },
   "dependencies": {
