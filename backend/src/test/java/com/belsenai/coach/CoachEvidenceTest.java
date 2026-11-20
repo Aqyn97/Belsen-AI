@@ -43,4 +43,12 @@ class CoachEvidenceTest {
         org.mockito.Mockito.verifyNoMoreInteractions(dashboard);
     }
 
+    @Test void serverPresentationSurvivesReplayWithoutEnteringProviderEvidence() {
+        var candidate=CoachEvidence.from(dashboard(List.of())).candidates().getFirst();
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        String json=mapper.writeValueAsString(candidate);
+        assertThat(json).contains("Review task commitments","Review current tasks");
+        assertThat(mapper.readValue(json,CoachEvidence.Candidate.class)).isEqualTo(candidate);
+    }
+
 }

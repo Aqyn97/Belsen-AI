@@ -39,8 +39,21 @@ test('packaged real workflows, accessibility, deep links, CSRF, sessions and iso
 });
 test('packaged expired JDBC session clears private analytics',async({page})=>{
  await register(page,`packaged-expiry-${randomUUID()}@example.test`);await expect(page.getByText('No assigned tasks',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Refresh report',exact:true})).toBeEnabled();const me=await(await page.request.get('/api/v1/me')).json();expect(me.id).toMatch(/^[a-f0-9-]{36}$/);
- const names=execFileSync('docker',['ps','--filter','name=belsen-browser-','--format','{{.Names}}'],{encoding:'utf8'}).trim().split('\n');expect(names).toHaveLength(1);
+ const names=execFileSync('docker',['ps','--filter','name=belsen-packaged-browser-','--format','{{.Names}}'],{encoding:'utf8'}).trim().split('\n');expect(names).toHaveLength(1);
  // Expire just this fixture account's session without waiting or changing production timeout/clock.
  const expired=execFileSync('docker',['exec',names[0]!,'psql','-U','postgres','-d','belsen_browser','-v','ON_ERROR_STOP=1','-c',`UPDATE spring_session SET last_access_time=0, expiry_time=0 WHERE principal_name='${me.id}' RETURNING session_id`],{encoding:'utf8'});expect(expired).toContain('UPDATE 1');
  await page.getByRole('button',{name:'Refresh report',exact:true}).click();await expect(page).toHaveURL('/auth');await expect(page.getByRole('heading',{name:'Welcome back.'})).toBeVisible();expect((await page.request.get('/api/v1/analytics/dashboard')).status()).toBe(401);
+});
+
+test('packaged Coach direct navigation and disabled real API preserve privacy and progress', async ({ page }, info) => {
+  let analyses = 0;page.on('request', r => { if (new URL(r.url()).pathname === '/api/v1/coach/analyses') analyses++; });
+  await register(page, `coach-${randomUUID()}@example.test`);
+  const direct = await page.goto('/app/coach');expect(direct?.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'AI Coach', exact: true })).toBeVisible();
+  await expect(page.getByText(/AI Coach is not configured/)).toBeVisible();await expect(page.getByText('Verified progress preview')).toBeVisible();
+  await page.reload();await expect(page.getByRole('button', { name: 'Analyze my progress' })).toBeDisabled();expect(analyses).toBe(0);
+  const status = await page.request.get('/api/v1/coach/status');expect((await status.json()).status).toBe('NOT_CONFIGURED');
+  const denied = await page.request.post('/api/v1/coach/analyses', { data: { submissionId: randomUUID(), noticeVersion: 1 } });expect(denied.status()).toBe(403);
+  await scan(page);await page.screenshot({ path: info.outputPath('packaged-coach.png'), fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

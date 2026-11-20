@@ -22,7 +22,7 @@ if (!packaged) {
 const tlsPassword = randomBytes(32).toString('hex');
 const keyStore = join(temporary, 'browser.p12');
 function createTestCertificate() { execFileSync('keytool', ['-genkeypair','-alias','belsen-browser','-keyalg','RSA','-keysize','2048','-validity','2','-dname','CN=localhost','-ext','SAN=dns:localhost,ip:127.0.0.1','-storetype','PKCS12','-keystore',keyStore,'-storepass:env','BELSEN_TEST_TLS_PASSWORD'], {env:{...process.env,BELSEN_TEST_TLS_PASSWORD:tlsPassword},stdio:'pipe'}); }
-const name = `belsen-browser-${randomUUID()}`;
+const name = `belsen-${packaged ? 'packaged-' : ''}browser-${randomUUID()}`;
 const password = randomBytes(32).toString('hex');
 let backend;
 let stopping = false;

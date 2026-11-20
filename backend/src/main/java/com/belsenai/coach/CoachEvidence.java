@@ -13,6 +13,20 @@ public class CoachEvidence {
     public record Candidate(String id,int order,Action action,Destination destination,String condition,
             String explanationTemplate,List<String> evidenceIds) {
         public Candidate { evidenceIds=List.copyOf(evidenceIds); }
+        @com.fasterxml.jackson.annotation.JsonProperty(access=com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+        public String title() { return switch(action) {
+            case REVIEW_TASKS -> "Review task commitments";
+            case REVIEW_ROUTINE -> "Review routine feasibility";
+            case PLAN_TARGET -> "Make goal progress measurable";
+            case NEXT_GOAL_STEP -> "Choose a next goal step";
+            case REVIEW_NEXT_PLAN -> "Review the next plan";
+        }; }
+        @com.fasterxml.jackson.annotation.JsonProperty(access=com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+        public String nextAction() { return switch(destination) {
+            case TASKS -> "Review current tasks and choose a feasible commitment.";
+            case HABITS -> "Review your habits and consider a manageable future schedule.";
+            case GOALS -> "Review your goals and the next open planning period.";
+        }; }
     }
     public record Fact(String id,String actual,String target,String percentage,String reason) { }
     public record Coverage(int includedGoals,long totalGoals,boolean truncated) { }

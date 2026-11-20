@@ -50,8 +50,8 @@ public class SecurityConfig {
             @Value("${belsen.google.enabled:false}") boolean googleEnabled, Environment environment) throws Exception {
         if (googleEnabled) { clients.getObject(); }
         http.authorizeHttpRequests(authorize -> {
-            authorize.requestMatchers(HttpMethod.GET, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/settings", "/assets/*").permitAll();
-            authorize.requestMatchers(HttpMethod.HEAD, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/settings", "/assets/*").permitAll();
+            authorize.requestMatchers(HttpMethod.GET, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/coach", "/app/settings", "/assets/*").permitAll();
+            authorize.requestMatchers(HttpMethod.HEAD, "/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals", "/app/tasks", "/app/habits", "/app/analytics", "/app/coach", "/app/settings", "/assets/*").permitAll();
             authorize
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()

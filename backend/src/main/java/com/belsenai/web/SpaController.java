@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class SpaController {
     @GetMapping(value={"/", "/auth", "/auth/callback", "/app", "/app/dashboard", "/app/goals",
-            "/app/tasks", "/app/habits", "/app/analytics", "/app/settings"}, produces=MediaType.TEXT_HTML_VALUE)
+            "/app/tasks", "/app/habits", "/app/analytics", "/app/coach", "/app/settings"}, produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<Resource> index() {
         Resource index=new ClassPathResource("static/index.html");
         if(!index.exists()) throw new ApiException(503,"The web application has not been packaged.");

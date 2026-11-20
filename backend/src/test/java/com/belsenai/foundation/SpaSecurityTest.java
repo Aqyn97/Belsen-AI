@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.*;
 class SpaSecurityTest {
     @Autowired MockMvc mvc;
     @Test void explicitDocumentsArePublicButNotCached() throws Exception {
-        for(String route:new String[]{"/","/auth","/auth/callback","/app","/app/dashboard","/app/goals","/app/tasks","/app/habits","/app/analytics","/app/settings"})
+        for(String route:new String[]{"/","/auth","/auth/callback","/app","/app/dashboard","/app/goals","/app/tasks","/app/habits","/app/analytics","/app/coach", "/app/settings"})
             mvc.perform(get(route)).andExpect(status().isOk()).andExpect(content().contentTypeCompatibleWith("text/html"))
                 .andExpect(header().string("Cache-Control","no-store"));
     }

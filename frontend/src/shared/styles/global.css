@@ -440,3 +440,18 @@ dialog::backdrop { background:rgb(23 23 23 / .45); }
 .analytics-empty { padding:1.5rem 0; }
 @media(max-width:700px) { .metric-grid { grid-template-columns:1fr; gap:1rem; }.metric-panel { padding:1.25rem; }.goal-metric-heading { flex-direction:column; gap:.5rem; }.dashboard-actions { align-items:stretch; flex-direction:column; }.analytics-selector { padding:1rem; } }
 @media(forced-colors:active) { .metric-progress { border:1px solid CanvasText; }.metric-progress>span { background:Highlight; } }
+
+.coach-page { max-width: 72rem; }
+.coach-notice { background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--yellow); border-radius: var(--radius); padding: clamp(1rem, 3vw, 2rem); margin-block: 1.5rem; }
+.coach-notice h2 { font-size: clamp(1.25rem, 3vw, 1.65rem); }
+.coach-notice p { max-width: 65ch; }
+.coach-consent { display: flex; align-items: flex-start; gap: .75rem; margin-block: 1.5rem; line-height: 1.6; }
+.coach-consent input { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; margin-top: .2rem; accent-color: #171717; }
+.coach-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; margin-block: 1.5rem; }
+.coach-facts article { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; overflow-wrap: anywhere; }
+.coach-facts h3 { margin-top: 0; }
+.coach-cards { list-style: none; display: grid; gap: 1rem; padding: 0; }
+.coach-cards > li { padding: clamp(1rem, 3vw, 2rem); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.coach-cards > li:first-child { border-color: #8b7514; }
+.coach-page section, .coach-page p, .coach-page li { overflow-wrap: anywhere; }
+.coach-page .actions { flex-wrap: wrap; }

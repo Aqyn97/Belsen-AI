@@ -22,7 +22,7 @@ This is a personal portfolio project focused on maintainable Java backend engine
 | Strict habit consistency | Implemented in API and Dashboard/Analytics interfaces |
 | Analytics dashboard API | Implemented; one read-only snapshot and historical cutoff |
 | Immutable closed-week reports | Planned; closed reports currently remain unfinalized |
-| AI coaching | Planned |
+| AI coaching | Interface and optional Groq ranking backend implemented; disabled by default; live-provider verification pending |
 | Foundation automated tests | Implemented; verification results below |
 | React frontend | Accounts, goals, tasks and habits implemented; dashboard/historical analytics implemented |
 | Production packaging | Implemented; single-origin JAR and optional runtime image; see B6 below |
@@ -367,3 +367,17 @@ See [production setup and deployment prerequisites](docs/DEPLOYMENT.md) for envi
 
 
 Verified November 16, 2026 for B6 under **Node 24.22.1 / Java 21**: **248 Maven tests** (67 unit, 181 PostgreSQL integration; all 231 baseline cases retained), **225 frontend tests**, **8 mocked Chromium cases**, **24 real-backend Chromium cases** and **6 packaged-production HTTPS Chromium cases** passed. Typecheck (including packaged test sources), ESLint, production build and both npm audits passed; audits reported zero vulnerabilities. Packaged flows used the production JAR/system clock, actual PostgreSQL and local HTTPS without Vite. Axe WCAG A/AA scans reported zero violations on the scanned major screens and confirmation dialog; keyboard focus and desktop/mobile screenshots were reviewed. This is focused evidence, not accessibility certification. The runtime Docker image built successfully, repeated JAR packaging produced an identical checksum, and production-JAR/credential/artifact/whitespace checks passed. Missing TLS configuration was rejected at startup. Temporary browser resources were cleaned up. No unresolved critical/high/medium B6 finding remained; the prerequisites in the deployment guide still apply before public launch.
+
+
+## Day 7 B3: AI Coach interface
+
+`/app/coach` previews verified reporting metrics and offers explicit analysis only after a sharing acknowledgement. The page supports week/cutoff selection, server-owned recommendation cards, original-evidence replay, partial goal coverage and clear disabled/quota/timeout states. It never dispatches analysis on page load, automatically retries inference or changes product records. Uncertain recovery keeps the original submission UUID in private in-memory state. Reloading the page clears that browser state; no private analysis is persisted in localStorage.
+
+Provider-disabled mode retains useful analytics previews. Groq Free-plan, privacy/ZDR and live-provider verification remain external requirements; public deployment is not complete. See [Coach design](docs/AI_COACH_DESIGN.md) and [deployment prerequisites](docs/DEPLOYMENT.md).
+
+
+Verified Day 7 B3, November 20, 2026: Java 21.0.11/Node 24.22.1. Full production-profile Maven packaging/verification passed **287 tests (81 unit, 206 PostgreSQL integration)**, zero failures/errors/skips; all 286 B2 tests remain, plus one Candidate presentation/replay compatibility test. V1–V7 and Hibernate validation passed; no migration or dependency version changed. Frontend typecheck, ESLint, **255 tests** (all 225 baseline plus 30 Coach cases) and production build passed. Chromium passed **8 existing mocked cases, 6 Coach-specific mocked API cases, all 24 real-backend cases, and 8 packaged production HTTPS cases** (six retained plus two Coach cases). Scoped axe scans reported zero violations for result/disabled/error states and packaged workflows; this is not full assistive-technology or cross-browser certification. Desktop/mobile screenshots, keyboard behavior and 320/375/768 px overflow checks were reviewed.
+
+The initial concurrent legacy browser runs reported two packaged expiry failures and one real historical-fixture failure because both suites matched the same database-name prefix. No application assertions or session/history mutations were bypassed. Separate prefixes/selectors corrected the test isolation; complete reruns passed. The final production JAR excludes local configuration, test launchers and fixture assets, and production JS contains no provider credentials, endpoint or test fixtures. Credential/artifact/whitespace/documentation checks passed. No unresolved critical/high/medium issue remained within B3 scope.
+
+Recovery state is private in-memory state with a 24-hour cache retention setting; sign-out/account changes clear it and a full reload loses it. Browser cancellation is not proof that remote inference stopped. No live Groq inference, actual Free-plan/ZDR verification, public deployment or B4 work occurred. Enabled UI workflows were verified with deterministic API fixtures; real-backend Coach browser coverage used the disabled provider. B4 remains a separately approved final integration stage.

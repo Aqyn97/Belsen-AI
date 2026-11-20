@@ -29,7 +29,7 @@ export async function establishSession(client: QueryClient) {
   const user = await api.request('/me', profile);
   client.setQueryData(['session'], user);
 }
-export const safeReturn = (value: unknown) => typeof value === 'string' && /^\/app\/(dashboard|goals|tasks|habits|analytics|settings)$/.test(value) ? value : '/app/dashboard';
+export const safeReturn = (value: unknown) => typeof value === 'string' && /^\/app\/(dashboard|goals|tasks|habits|analytics|coach|settings)$/.test(value) ? value : '/app/dashboard';
 export function passwordError(value: string) {
   if ([...value].length < 12) return 'Use at least 12 Unicode characters.';
   if (new TextEncoder().encode(value).length > 72) return 'Use at most 72 UTF-8 bytes (some characters use more than one byte).';
