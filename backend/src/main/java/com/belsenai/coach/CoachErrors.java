@@ -16,4 +16,11 @@ public class CoachErrors {
         return ResponseEntity.status(429).cacheControl(CacheControl.noStore()).header("Retry-After",Long.toString(error.retryAfter()))
                 .body(problems.create(429,error.getMessage(),request.getRequestURI()));
     }
+    @ExceptionHandler(CoachProviderFailure.class)
+    public ResponseEntity<ProblemDetail> provider(CoachProviderFailure error,HttpServletRequest request) {
+        var builder=ResponseEntity.status(error.status()).cacheControl(CacheControl.noStore());
+        if(error.status()==429) builder.header("Retry-After","60");
+        return builder.body(problems.create(error.status(),error.getMessage(),request.getRequestURI()));
+    }
+
 }

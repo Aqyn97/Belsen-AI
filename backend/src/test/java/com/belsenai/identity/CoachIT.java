@@ -102,10 +102,13 @@ class CoachIT extends PostgresHttpSupport {
             assertThatThrownBy(()->requests.processing(a.id,key)).isInstanceOf(ApiException.class);
             UUID abandoned=UUID.randomUUID();requests.claim(a.id,abandoned,"c".repeat(64));at=at.plusSeconds(21);
             assertThat(requests.inspect(a.id,abandoned).state()).isEqualTo(CoachRequests.State.FAILED_PRE_DISPATCH);
-            at=Instant.parse("2026-11-05T00:00:00Z");UUID next=UUID.randomUUID();requests.claim(a.id,next,"d".repeat(64));requests.reserve(a.id,next,new BigDecimal("0.1"));
+            at=Instant.parse("2026-11-05T00:00:00Z");UUID next=UUID.randomUUID();
+            try(var b=account()) {
+            requests.claim(b.id,next,"d".repeat(64));requests.reserve(b.id,next,new BigDecimal("0.1"));
             assertThat(jdbc.queryForObject("select count(*) from coach_daily_usage where scope='GLOBAL'",Integer.class)).isEqualTo(2);
-            requests.failBeforeDispatch(a.id,next);
-            assertThat(requests.inspect(a.id,next).state()).isEqualTo(CoachRequests.State.FAILED_PRE_DISPATCH);
+            requests.failBeforeDispatch(b.id,next);
+            assertThat(requests.inspect(b.id,next).state()).isEqualTo(CoachRequests.State.FAILED_PRE_DISPATCH);
+            }
         }
     }
     @Test void canonicalReplayAndConflictingKeysThroughHttp() throws Exception {

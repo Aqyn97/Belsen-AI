@@ -45,3 +45,15 @@ belsen:
     enabled: ${BELSEN_GOOGLE_ENABLED:false}
     client-id: ${BELSEN_GOOGLE_CLIENT_ID:}
     client-secret: ${BELSEN_GOOGLE_CLIENT_SECRET:}
+  coach:
+    enabled: ${BELSEN_COACH_ENABLED:false}
+    api-key: ${BELSEN_COACH_API_KEY:}
+    free-plan-confirmed: ${BELSEN_COACH_FREE_PLAN_CONFIRMED:false}
+    privacy-reviewed: ${BELSEN_COACH_PRIVACY_REVIEWED:false}
+    model: ${BELSEN_COACH_MODEL:openai/gpt-oss-20b}
+    endpoint: ${BELSEN_COACH_ENDPOINT:https://api.groq.com/openai/v1/chat/completions}
+    connect-seconds: ${BELSEN_COACH_CONNECT_SECONDS:3}
+    deadline-seconds: ${BELSEN_COACH_DEADLINE_SECONDS:15}
+    max-input-bytes: ${BELSEN_COACH_MAX_INPUT_BYTES:12288}
+    max-output-tokens: ${BELSEN_COACH_MAX_OUTPUT_TOKENS:512}
+    strict-output: true

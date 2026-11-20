@@ -20,7 +20,7 @@ public class CoachRequests {
     private final Clock clock;
     public CoachRequests(JdbcTemplate jdbc,Clock clock) { this.jdbc=jdbc;this.clock=clock; }
     // Fixed application-owned lock serializes claims, reservations, transitions and rollover checks.
-    private Instant lock() {
+    Instant lock() {
         jdbc.execute("SET LOCAL lock_timeout='3s'");
         jdbc.execute("SET LOCAL statement_timeout='5s'");
         jdbc.execute("SELECT pg_advisory_xact_lock(72610401)");
@@ -48,16 +48,19 @@ public class CoachRequests {
     /** Bounded maintenance, also invoked by admission. Uncertain dispatch is never erased automatically. */
     public int cleanup() { return cleanupAt(lock()); }
     private int cleanupAt(Instant now) {
+        jdbc.update("DELETE FROM coach_results WHERE (owner_id,submission_id) IN (SELECT owner_id,submission_id FROM coach_results WHERE expires_at<=? ORDER BY expires_at LIMIT 100)",ts(now));
         int deleted=jdbc.update("DELETE FROM coach_requests WHERE (owner_id,submission_id) IN (SELECT owner_id,submission_id FROM coach_requests WHERE retain_until<=? AND state IN ('COMPLETED','FAILED_PRE_DISPATCH') ORDER BY retain_until LIMIT 100)",ts(now));
         jdbc.update("DELETE FROM coach_daily_usage WHERE ctid IN (SELECT ctid FROM coach_daily_usage WHERE quota_day<? ORDER BY quota_day LIMIT 100)",now.atZone(ZoneOffset.UTC).toLocalDate().minusDays(32));
         return deleted;
     }
     /** Foundation only: the future adapter must supply a validated worst-case price. */
-    public void reserve(UUID owner,UUID key,BigDecimal maximumCost) {
-        if(maximumCost==null || maximumCost.signum()<=0 || maximumCost.scale()>8 || maximumCost.compareTo(BigDecimal.ONE)>0) throw new ApiException(400,"Invalid cost reservation.");
+    public void reserve(UUID owner,UUID key,BigDecimal maximumCost) { reserveInternal(owner,key,maximumCost,false); }
+    public void reserveFree(UUID owner,UUID key) { reserveInternal(owner,key,BigDecimal.ZERO,true); }
+    private void reserveInternal(UUID owner,UUID key,BigDecimal maximumCost,boolean free) {
+        if(maximumCost==null || (free ? maximumCost.signum()<0 : maximumCost.signum()<=0) || maximumCost.scale()>8 || maximumCost.compareTo(BigDecimal.ONE)>0) throw new ApiException(400,"Invalid cost reservation.");
         Instant now=lock();require(owner,key,State.ACCEPTED);
-        if(jdbc.queryForObject("SELECT count(*) FROM coach_requests WHERE state IN ('RESERVED','PROCESSING')",Long.class)>=2
-                || jdbc.queryForObject("SELECT count(*) FROM coach_requests WHERE owner_id=? AND state IN ('RESERVED','PROCESSING')",Long.class,owner)>0) throw new CoachLimitException("Coach analysis capacity is unavailable.",20);
+        if(jdbc.queryForObject("SELECT count(*) FROM coach_requests WHERE state IN ('RESERVED','PROCESSING','OUTCOME_UNKNOWN')",Long.class)>=2
+                || jdbc.queryForObject("SELECT count(*) FROM coach_requests WHERE owner_id=? AND state IN ('RESERVED','PROCESSING','OUTCOME_UNKNOWN')",Long.class,owner)>0) throw new CoachLimitException("Coach analysis capacity is unavailable.",20);
         LocalDate day=now.atZone(ZoneOffset.UTC).toLocalDate();
         jdbc.update("INSERT INTO coach_daily_usage(quota_day,scope) VALUES(?,'GLOBAL') ON CONFLICT DO NOTHING",day);
         jdbc.update("INSERT INTO coach_daily_usage(quota_day,scope,owner_id) VALUES(?,'ACCOUNT',?) ON CONFLICT DO NOTHING",day,owner);
@@ -83,6 +86,18 @@ public class CoachRequests {
         if(r.state()!=State.ACCEPTED && r.state()!=State.RESERVED) throw new ApiException(409,"Coach request cannot transition.");
         // Conservative reservation accounting: no refunds, including pre-dispatch abandonment.
         jdbc.update("UPDATE coach_requests SET state='FAILED_PRE_DISPATCH',finished_at=? WHERE owner_id=? AND submission_id=?",ts(now),owner,key);
+    }
+    public void finish(UUID owner,UUID key,String json,Instant prepared,Instant expires,boolean rulesOnly) {
+        Instant now=lock();require(owner,key,rulesOnly ? State.FAILED_PRE_DISPATCH : State.PROCESSING);
+        if(!rulesOnly) jdbc.update("UPDATE coach_requests SET state='COMPLETED',finished_at=? WHERE owner_id=? AND submission_id=?",ts(now),owner,key);
+        jdbc.update("INSERT INTO coach_results(owner_id,submission_id,result_json,created_at,expires_at) VALUES(?,?,?,?,?)",owner,key,json,ts(prepared),ts(expires));
+    }
+    public void uncertain(UUID owner,UUID key) {
+        Instant now=lock();var r=find(owner,key);
+        if(r==null) throw new ApiException(404,"Coach request not found.");
+        if(r.state()==State.OUTCOME_UNKNOWN) return;
+        require(owner,key,State.PROCESSING);
+        jdbc.update("UPDATE coach_requests SET state='OUTCOME_UNKNOWN',finished_at=? WHERE owner_id=? AND submission_id=?",ts(now),owner,key);
     }
     public Request inspect(UUID owner,UUID key) { lock();var r=find(owner,key);if(r==null) throw new ApiException(404,"Coach request not found.");return r; }
     private void require(UUID owner,UUID key,State state) {
