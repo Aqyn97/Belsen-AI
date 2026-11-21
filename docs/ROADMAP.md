@@ -295,3 +295,8 @@ Recovery state is private in-memory state with a 24-hour cache retention setting
 - A disposable logical backup restores V1–V7 schema, representative rows and immutable-event protection. Provider-specific backups/PITR and rollback remain an operator rehearsal before real data.
 - README explains implemented functionality and external limits; operational runbooks cover HTTPS, secrets, monitoring, retention, restore, rollback and uncertain Coach containment.
 - No public release, license choice or live-provider verification is implied. The final decision and exact evidence are in [RELEASE_READINESS.md](RELEASE_READINESS.md).
+
+
+### Local deployment preparation, November 21, 2026
+
+Dedicated PostgreSQL/Caddy/packaged-app configuration, registration-off policy and encrypted backup tooling are prepared locally. This is not a public release: stock, domain, billing/tax, DNS, host hardening, off-site permissions/restore, alert delivery and individual account approvals remain external gates. Fresh preparation results are recorded in DEPLOYMENT.md. No cloud resources or Git publication are authorized by this work package.

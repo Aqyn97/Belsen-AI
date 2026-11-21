@@ -2,6 +2,7 @@ package com.belsenai.identity.controller;
 
 import com.belsenai.identity.dto.*;
 import com.belsenai.identity.security.LoginThrottle;
+import com.belsenai.identity.security.RegistrationPolicy;
 import com.belsenai.identity.security.SessionLogin;
 import com.belsenai.identity.service.AccountService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,11 +18,19 @@ public class AuthController {
     private final AccountService accounts;
     private final SessionLogin sessions;
     private final LoginThrottle throttle;
+    private final RegistrationPolicy registration;
 
-    public AuthController(AccountService accounts, SessionLogin sessions, LoginThrottle throttle) {
+    public AuthController(AccountService accounts, SessionLogin sessions, LoginThrottle throttle, RegistrationPolicy registration) {
+        this.registration = registration;
         this.accounts = accounts;
         this.sessions = sessions;
         this.throttle = throttle;
+    }
+
+    @GetMapping("/policy")
+    public PolicyResponse policy(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store");
+        return new PolicyResponse(registration.enabled());
     }
 
     @GetMapping("/csrf")
@@ -34,6 +43,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest input,
             HttpServletRequest request, HttpServletResponse response) {
+        registration.requireEnabled();
         throttle.check(input.email(), request.getRemoteAddr());
         UserResponse user = accounts.register(input);
         sessions.establish(user.id(), request, response);
@@ -49,5 +59,6 @@ public class AuthController {
         return user;
     }
 
+    public record PolicyResponse(boolean registrationEnabled) { }
     public record CsrfResponse(String headerName, String token) { }
 }

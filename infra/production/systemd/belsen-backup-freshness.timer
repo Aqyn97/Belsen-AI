@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly Belsen verified-backup freshness check
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=belsen-backup-freshness.service
+
+[Install]
+WantedBy=timers.target

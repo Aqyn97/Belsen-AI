@@ -6,6 +6,7 @@ These contracts describe the implemented session-authenticated API. See [Coach d
 
 | Method and route | Behavior |
 | --- | --- |
+| `GET /api/v1/auth/policy` | Public no-store `{registrationEnabled: boolean}`; false by default, local profile defaults true |
 | `GET /api/v1/auth/csrf` | Return `headerName` and `token`; establish the browser session cookie |
 | `POST /api/v1/auth/register` | Accept email, password, displayName and timezone; return `201` with a safe profile and sign in |
 | `POST /api/v1/auth/login` | Accept email/password; return `200` with a safe profile and sign in |
@@ -137,3 +138,5 @@ One exclusive cutoff applies to all three metrics. Open weeks default to the cap
 `calendarStatus` is `FROZEN` for stored weeks, `RECONSTRUCTED` for policy-derived intervals, or `UNFROZEN` for a new-account preview. `reportStatus` is `PROVISIONAL` while the week is open and `CLOSED_UNFINALIZED` afterward. There is no FINALIZED state in this implementation. A transaction accepted before week-end can commit later and change a closed unfinalized result. Current labels can also change. One response uses one PostgreSQL REPEATABLE READ snapshot; separate requests/pages do not share a pinned snapshot.
 
 Missing pre-baseline timezone history is never fabricated. A pre-habit account with older frozen weeks but no policy/current reservation can receive a current-calendar conflict until an ordinary authorized activity reserves the current week. Shared calendar gaps and conflicting future reservations retain their existing behavior. Immutable closed-week finalization remains a separate future stage. Coach uses V6/V7; finalization has no migration.
+
+Self-registration is server-controlled. With `BELSEN_REGISTRATION_ENABLED=false`, valid registration attempts return safe 403 before throttle allocation, password hashing or persistence. Existing password/Google identities can still sign in; creation of new Google accounts is also blocked. CSRF remains required. The public policy contains no account or credential data.

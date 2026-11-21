@@ -1,0 +1,21 @@
+{
+	email {$BELSEN_ACME_EMAIL}
+	admin off
+	persist_config off
+	grace_period 30s
+	servers {
+		protocols h1 h2
+		max_header_size 16KiB
+		timeouts {
+			read_header 10s
+			read_body 30s
+			write 40s
+			idle 60s
+		}
+	}
+}
+
+# Set the owner-approved DNS-only Cloudflare hostname; no invented deployment domain.
+{$BELSEN_DOMAIN} {
+	import /etc/caddy/proxy.caddy
+}

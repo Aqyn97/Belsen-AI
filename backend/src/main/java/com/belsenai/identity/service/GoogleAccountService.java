@@ -4,6 +4,7 @@ import java.util.UUID;
 import com.belsenai.common.error.ApiException;
 import com.belsenai.identity.entity.ExternalIdentity;
 import com.belsenai.identity.entity.User;
+import com.belsenai.identity.security.RegistrationPolicy;
 import com.belsenai.identity.repository.ExternalIdentityRepository;
 import com.belsenai.identity.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -13,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class GoogleAccountService {
     private final ExternalIdentityRepository identities;
     private final UserRepository users;
+    private final RegistrationPolicy registration;
 
-    public GoogleAccountService(ExternalIdentityRepository identities, UserRepository users) {
+    public GoogleAccountService(ExternalIdentityRepository identities, UserRepository users, RegistrationPolicy registration) {
+        this.registration = registration;
         this.identities = identities;
         this.users = users;
     }
@@ -27,6 +30,7 @@ public class GoogleAccountService {
         }
         var existing = identities.findByProviderAndProviderSubject("google", subject);
         if (existing.isPresent()) { return existing.get().getUser().getId(); }
+        registration.requireEnabled();
         String normalized = EmailNormalizer.normalize(email);
         if (!emailVerified || normalized == null || normalized.length() > 254
                 || !normalized.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {

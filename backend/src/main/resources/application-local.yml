@@ -5,3 +5,7 @@ server:
     session:
       cookie:
         secure: false
+
+belsen:
+  registration:
+    enabled: ${BELSEN_REGISTRATION_ENABLED:true}

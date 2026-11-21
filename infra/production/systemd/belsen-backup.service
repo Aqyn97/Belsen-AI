@@ -1,0 +1,27 @@
+[Unit]
+Description=Belsen encrypted PostgreSQL backup and verified R2 upload
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+OnFailure=belsen-backup-alert.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/belsen/backup.env
+ExecStart=/opt/belsen/scripts/production/run-backup.sh
+UMask=0077
+TimeoutStartSec=30min
+MemoryMax=512M
+CPUQuota=75%
+IOWeight=25
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/belsen-backups
+RestrictSUIDSGID=true
+LockPersonality=true
+StandardOutput=journal
+StandardError=journal

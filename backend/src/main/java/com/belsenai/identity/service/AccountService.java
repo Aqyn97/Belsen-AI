@@ -6,6 +6,7 @@ import com.belsenai.common.error.ApiException;
 import com.belsenai.goals.ReportingCalendar;
 import com.belsenai.identity.dto.*;
 import com.belsenai.identity.entity.User;
+import com.belsenai.identity.security.RegistrationPolicy;
 import com.belsenai.identity.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,8 +18,10 @@ public class AccountService {
     private final PasswordEncoder passwords;
     private final String dummyHash;
     private final ReportingCalendar calendar;
+    private final RegistrationPolicy registration;
 
-    public AccountService(UserRepository users, PasswordEncoder passwords, ReportingCalendar calendar) {
+    public AccountService(UserRepository users, PasswordEncoder passwords, ReportingCalendar calendar, RegistrationPolicy registration) {
+        this.registration = registration;
         this.users = users;
         this.calendar = calendar;
         this.passwords = passwords;
@@ -27,6 +30,7 @@ public class AccountService {
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
+        registration.requireEnabled();
         if (users.existsByEmail(request.email())) { throw new ApiException(409, "Email is already registered."); }
         User user = new User(request.email(), passwords.encode(request.password()), request.displayName(), request.timezone());
         return UserResponse.from(users.saveAndFlush(user));

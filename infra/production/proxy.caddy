@@ -1,0 +1,20 @@
+# Only imported into an HTTPS site. Automatic HTTP redirects never reach the app.
+request_body {
+	max_size 16KiB
+}
+reverse_proxy app:8081 {
+	# Initial deployment is Cloudflare DNS-only. Never trust incoming forwarding headers.
+	header_up -Forwarded
+	header_up X-Forwarded-For {http.request.remote.host}
+	header_up X-Real-IP {http.request.remote.host}
+	header_up X-Forwarded-Proto https
+	header_up X-Forwarded-Host {$BELSEN_PUBLIC_HOST}
+	header_up X-Forwarded-Port 443
+	header_up Host {$BELSEN_PUBLIC_HOST}
+	transport http {
+		dial_timeout 3s
+		response_header_timeout 30s
+		read_timeout 35s
+		write_timeout 30s
+	}
+}

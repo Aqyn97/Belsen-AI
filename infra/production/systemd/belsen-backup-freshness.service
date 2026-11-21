@@ -1,0 +1,14 @@
+[Unit]
+Description=Check age of last verified Belsen off-site backup
+OnFailure=belsen-backup-alert.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/python3 /opt/belsen/scripts/production/backup.py status --out-dir /var/lib/belsen-backups --max-age-hours 26
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/belsen-backups

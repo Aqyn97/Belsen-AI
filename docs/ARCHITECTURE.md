@@ -495,3 +495,12 @@ JSON API mutations are bounded before MVC decoding: 16 KiB generally and 4 KiB f
 Definite pre-dispatch Coach validation failures allow a new explicit submission. Potential dispatch/transport errors retain the original key and never trigger automatic retry. Current goal metadata is labeled separately from historical units. A test-only external launcher supplies deterministic ranking for real HTTPS/PostgreSQL browser tests; it is not packaged or scanned in production.
 
 See [release evidence](RELEASE_READINESS.md) and [operations](DEPLOYMENT.md). Existing schema migrations and provider policy are unchanged.
+
+
+## Controlled portfolio deployment preparation
+
+The optional dedicated Compose topology uses Caddy as the sole published service, private app/data networks and a fixed proxy peer trusted by Spring Boot. Cloudflare is DNS-only initially. File-mounted credentials, a database-owning non-superuser application role and schema-scoped backup SELECT privileges preserve the existing single-datasource Flyway model. There is no public admin endpoint.
+
+Self-registration defaults off, the explicit local profile defaults on, and a public no-store policy drives the signup UI without changing login/session behavior. The standalone PreviewAccountSql utility only prepares a private salted-hash SQL file when explicitly invoked through an interactive console. It starts no Spring context, HTTP server or database connection. Production artifacts intentionally include this operator utility; test clock/provider launchers remain excluded.
+
+Current CSRF defenses are secret session-bound tokens, rotated session security state, secure cookies and same-origin browser requests. There is no independent Origin-header allowlist or CORS relaxation; do not claim one was tested. Caddy overwrites forwarding headers and the backend trusts only its fixed private peer. See DEPLOYMENT.md for the trust boundary and local versus cloud evidence.

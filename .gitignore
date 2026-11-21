@@ -36,3 +36,7 @@ logs/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local Python verification output
+__pycache__/
+*.pyc

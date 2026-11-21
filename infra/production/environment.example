@@ -1,0 +1,12 @@
+# Copy OUTSIDE the checkout, e.g. /etc/belsen/production.env; chmod 0600.
+# No real domain, image, email or credential is supplied by this template.
+# Prefer a registry image@sha256:... built/tested for linux/amd64, or a verified local image ID.
+BELSEN_APP_IMAGE=
+BELSEN_DOMAIN=
+BELSEN_ACME_EMAIL=
+# Absolute host paths only. Parent directory must be root-owned 0700; see deployment runbook.
+# Files must be readable by the designated container UIDs. Compose file secrets are bind mounts.
+BELSEN_POSTGRES_ADMIN_PASSWORD_FILE=
+BELSEN_DB_PASSWORD_FILE=
+BELSEN_POSTGRES_BACKUP_PASSWORD_FILE=
+# Do not add Google/Groq keys, enable registration, or change network trust here.

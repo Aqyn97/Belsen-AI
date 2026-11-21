@@ -7,12 +7,15 @@ import { App } from '../../app/App';
 import { createQueryClient } from '../../app/providers';
 import { api } from '../../shared/api/client';
 const alice = {id:'alice',email:'alice@example.test',displayName:'Alice',timezone:'UTC'};
+let registrationEnabled: boolean;
+let policyFailure: boolean;
 let authenticated: boolean; let posts: string[]; let csrfCount: number; let rejection: number;
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {status,headers:{'Retry-After':'900'}});
 beforeEach(() => {
-  api.clear(); authenticated = false; posts = []; csrfCount = 0; rejection = 0;
+  api.clear(); registrationEnabled = true; policyFailure = false; authenticated = false; posts = []; csrfCount = 0; rejection = 0;
   vi.stubGlobal('fetch',vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
     const path = String(url);
+    if (path.endsWith('/auth/policy')) return json({registrationEnabled}, policyFailure ? 503 : 200);
     if (path.endsWith('/csrf')) { csrfCount++; return json({headerName:'X-CSRF-TOKEN',token:`token-${csrfCount}`}); }
     if (init?.method === 'POST') {
       posts.push(path);
@@ -90,4 +93,17 @@ it('reconciles identity after a forbidden settings update before permitting a ma
   }));
   await userEvent.click(screen.getByRole('button',{name:'Save settings'}));
   expect(await screen.findByDisplayValue('Bob')).toBeVisible(); expect(screen.queryByDisplayValue('Alice')).not.toBeInTheDocument(); expect(patches).toBe(1);
+});
+
+it('hides self-registration when the server disables it and preserves approved-account sign-in', async () => {
+  registrationEnabled = false;show();await screen.findByText(/Self-registration is disabled/);
+  expect(screen.queryByRole('button',{name:'New here? Create an account'})).not.toBeInTheDocument();
+  await login();expect(await screen.findByRole('heading',{name:'Dashboard'})).toBeVisible();
+  expect(posts).toEqual(['/api/v1/auth/login']);
+});
+it('fails closed for signup when policy loading fails without blocking existing sign-in', async () => {
+  policyFailure = true;show();await screen.findByText(/Existing accounts can still sign in/);
+  expect(screen.queryByRole('button',{name:'New here? Create an account'})).not.toBeInTheDocument();
+  await login();expect(await screen.findByRole('heading',{name:'Dashboard'})).toBeVisible();
+  expect(posts).toEqual(['/api/v1/auth/login']);
 });

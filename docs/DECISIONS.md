@@ -192,3 +192,12 @@ Day 7 B4 preserves the modular monolith, V1–V7, session/CSRF behavior and fixe
 Complement mocked Coach UI tests with real HTTPS/Java/PostgreSQL tests using an external test-only ranking bean, and rehearse logical PostgreSQL backup/restore in a disposable database. These fixtures cannot establish live third-party behavior or production infrastructure recovery.
 
 A controlled initial deployment keeps optional providers disabled until their external reviews pass. Unknown Coach operations retain capacity; safe incident containment disables inference, preserves the ledger and requires separately reviewed forward recovery before re-enabling it. No administrative recovery, CI, license selection or public deployment is implied. See DEPLOYMENT.md and RELEASE_READINESS.md for evidence and launch prerequisites.
+
+
+## D23: local preparation for a controlled single-VPS preview
+
+Keep three services on the proposed 4 GB x86-64 VPS: existing packaged Java/React image, PostgreSQL 17 and Caddy. Publish ingress only; keep app/database private, use exact-peer native forwarding and DNS-only Cloudflare initially. Non-root/read-only services, bounded RAM/logs and encrypted off-site dumps limit the operational surface. Bootstrap role creation is SQL on an empty volume; migrations V1–V7 remain unchanged. Application and backup credentials are separate and non-superuser, though Flyway still needs app-owned schema privileges.
+
+Registration is disabled by default with explicit local opt-in behavior. Approved individual accounts are prepared offline with the existing validation/BCrypt encoder; no bypass login or public provisioning API is added. Backup scripts stream pg_dump to age and confirm encrypted uploads before marking success. Systemd journaling/freshness checks need a separately tested external alert channel.
+
+All infrastructure, DNS, R2 access, publication and public deployment require separate approval. CX23 stock and the all-in budget are external gates; do not substitute a higher-cost or ARM server silently. See DEPLOYMENT.md for exact configuration, costs and remaining decisions.

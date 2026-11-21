@@ -1,5 +1,7 @@
 # Production integration and deployment preparation
 
+**Current work package: local Hetzner/Caddy/PostgreSQL preparation, November 21, 2026.** See [the target runbook](#hetzner-controlled-portfolio-preview) below. Nothing here authorizes a purchase, DNS change, remote login, deployment, provider enablement or Git publication. Older dated verification below is historical evidence, not proof of current cloud infrastructure.
+
 The website and API ship in one Spring Boot JAR. Day 7 adds optional Coach ranking and its interface, disabled by default. No public deployment has been performed. Live Google/Groq verification, immutable report finalization and CI automation remain pending. Historical checkpoint results below retain their original dates; see RELEASE_READINESS.md for the current audit.
 
 ## Build the combined application
@@ -176,7 +178,7 @@ Use a secret manager or protected injected environment for database, TLS, Google
 
 `/api/v1/health` is process liveness only. Successful startup proves initial database/migration validation, not continuous database readiness. Monitor synthetic private read journeys separately, startup failures, 5xx/latency, pool/DB capacity, backup age, TLS renewal, auth 429s and Coach unknown counts. Keep bounded access-controlled logs without bodies, SQL bind values, cookies or Authorization headers. Alert on any unknown Coach outcome. Let SIGTERM complete the 30-second graceful shutdown; give the host at least 35 seconds.
 
-Public registration currently has rate limits but no verification, recovery or invite mode. For a controlled demonstration, restrict the entire origin at ingress to an agreed audience. This is an operator access policy, not an implemented invite feature. Do not open unrestricted registration without explicitly accepting the limitations and designing abuse/recovery policy.
+The prepared portfolio configuration disables self-registration while keeping the public landing page accessible. Existing approved accounts may sign in; password recovery/email verification/invites remain absent. The general single-origin configuration above is reusable, while the Hetzner runbook below is the selected preparation target. Do not enable unrestricted registration without separate approval.
 
 ### Hosting evaluation (reviewed November 20, 2026)
 
@@ -190,15 +192,7 @@ Recommendation: one small managed container service plus durable managed Postgre
 
 Assign an owner, encrypted off-host storage, access policy and retention before real data is accepted. Proposed controlled-demo objectives are RPO 24 hours and RTO two hours; these are targets requiring a timed provider-specific drill, not a tested SLA. Schedule daily logical backups and pre-migration backups; enable provider point-in-time recovery where available. Keep at least seven daily backups initially and review legal/privacy retention before expanding it. A backup on the database's own volume is insufficient. Monitor backup success and rehearse restore.
 
-Use PostgreSQL 17 client tools and a protected `.pg_service.conf`/`.pgpass` or equivalent secret injection; never put passwords in command arguments or paste them in chat. Example service names below are operator configuration, not repository credentials:
-
-```sh
-pg_dump --dbname=service=belsen-backup --format=custom --file=/secure-backups/belsen.dump
-pg_restore --list /secure-backups/belsen.dump
-pg_restore --dbname=service=belsen-restore --no-owner --exit-on-error /secure-backups/belsen.dump
-```
-
-Encrypt and checksum the backup before uploading it to protected storage. Restore only into a **new empty isolated database**, with production traffic and Coach disabled. Recreate the intended role/ownership/permissions separately; `--no-owner` does not reproduce grants or role management. Verify all seven Flyway history/checksums with the exact release artifact, Hibernate validation, representative counts, foreign keys, immutable history triggers, profile ownership and reports. Test startup and a private login journey against that database. The disposable DatabaseRestoreIT checks real pg_dump/pg_restore, row/schema counts, V1–V7 history and event UPDATE rejection; it does not prove an off-site backup, provider PITR or production recovery time.
+For this target use the encrypted streaming scripts and concrete procedure below; do not stage an unencrypted dump on the VPS. Keep service credentials in protected files, encrypt to an off-server age identity, verify the uploaded encrypted object and rehearse restoration into a new isolated PostgreSQL 17 database. Confirm Flyway V1–V7/Hibernate, ownership, representative rows and immutable-history guards before cutover. The original DatabaseRestoreIT remains complementary database-level evidence; it does not prove R2 permissions or production recovery time.
 
 Invalidate restored sessions **before** permitting access: in the isolated restored database, remove `spring_session_attributes`, then `spring_session`, within one transaction. Do not restore previously active authenticated sessions to public service. This is intentional operator recovery work, never an automatic startup action. Keep Coach request/tombstone/usage records; a stale backup can omit a previously dispatched call. Therefore keep inference disabled until provider activity since the backup has been reconciled. Never redispatch because a restored key appears absent.
 
@@ -225,3 +219,211 @@ This containment procedure is safe but does not restore inference capacity. Auto
 5. Deploy the reviewed image/JAR only after separate public-deployment authorization; run secure-cookie/CSRF/session/ownership/deep-link/health smoke checks through the real ingress.
 6. Enable Google only after exact callback/consent setup and a separately verified real sign-in. Enable Groq only after actual Free-plan/no-paid-billing/privacy review and separately authorized synthetic live verification, accepting the fail-closed recovery limitation above.
 7. Monitor the restricted audience, backup age, auth abuse and database capacity. Expand registration only through a separate reviewed policy.
+
+
+## Hetzner controlled portfolio preview
+
+**Local preparation only.** Target one CX23 x86-64 VM, 2 shared vCPU, 4 GB RAM and 40 GB disk, in Germany or Helsinki, running supported Ubuntu 24.04 LTS. Confirm the actual offered image, stock, region and final price in the console before approving purchase. Compare measured latency from the owner/recruiter audience to available regions; no live server or regional benchmark was used here. Ubuntu 26.04 LTS is also supported upstream but was not selected or remotely tested by this preparation.
+
+```text
+Recruiter browser -- HTTPS --> Caddy -- private HTTP --> Spring Boot + packaged React
+                                        app -- private PostgreSQL protocol --> PostgreSQL 17
+Host backup timer -- pg_dump -> age encryption --> private R2 Standard bucket
+Cloudflare Free: DNS-only initially; no Cloudflare HTTP proxy in this tested trust model
+```
+
+The initial DNS record must be **DNS-only (grey cloud)**. Caddy owns public certificate issuance and renewal; Cloudflare is not the TLS terminator. The origin IP remains visible and the Free HTTP proxy/WAF/DDoS features are not provided in this mode. [Cloudflare explains the distinction](https://developers.cloudflare.com/dns/proxy-status/). Do not turn on orange-cloud proxying without a separate review of client-IP provenance, Cloudflare Full (strict), origin certificate verification, allowed proxy ranges, cache bypass for private responses and origin firewall rules. Never use Flexible TLS.
+
+### Cost and availability gate
+
+Reviewed November 21, 2026. [Hetzner's published June 2026 price list](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/) lists EU CX23 at **€5.49 / $6.49** excluding IPv4/tax. Its [current public cloud page](https://www.hetzner.com/cloud/) marks cost-optimized service unavailable; this is not a reservation or an account/region stock check. Prices and stock must be reconfirmed at checkout. Account billing currency determines the applicable quote; the USD values below are provider USD prices, not an assumed exchange rate.
+
+| Item | Monthly planning allowance | Treatment |
+| --- | --- | --- |
+| CX23 in Germany/Finland | $6.49 (€5.49) | Published server cap before tax; stock unconfirmed |
+| Primary IPv4 | $0.60 (€0.50) | [Separately billed](https://docs.hetzner.com/cloud/servers/primary-ips/overview/); keep IPv4 for recruiter reachability |
+| Cloudflare DNS Free | $0 | DNS hosting only; domain purchase is separate |
+| Domain | $1–2 amortized | Budget assumption for a $12–24 annual renewal, **not a TLD quote**; first payment is annual and premium TLDs can exceed it |
+| R2 Standard | $0 if account remains within included usage | Shared-account allowances; usage above them is billable |
+| Optional whole-server snapshots/backups | $0 initially; separate quote before enabling | Not a replacement for encrypted logical database backups; retention/size must be budgeted |
+| Traffic overages | $0 assumed within selected EU allowance | Verify included transfer and per-unit excess in the order; R2 uploads consume VPS outbound traffic |
+| Monitoring | $0 local tools/operator checks | Any external alert/uptime plan needs a separate cost decision |
+| Tax | Not determined | Depends on actual billing address/status; do not infer tax treatment from this runbook |
+
+The base is **$7.09/month** before tax/domain. A $1–2 domain allowance gives **$8.09–9.09 before tax**. An illustrative 19% charge on VPS+IPv4 gives **$9.44–10.44 including that domain allowance**, before other charges; 19% is a scenario, not a statement of the owner's applicable tax. Thus the $5–10 target is conditional and the low end is not realistic with a new domain. Obtain explicit approval for the final all-in quote, renewal and overage budget.
+
+If CX23 is unavailable, **do not silently substitute**: waiting is the budget-preserving choice. EU CPX22 is a same-architecture alternative, but the published list is **$22.99 (€19.49)** plus IPv4 before tax/domain, already outside budget. CAX is ARM and requires a separately approved architecture/build review. No instance was selected or purchased.
+
+[R2 Standard pricing](https://developers.cloudflare.com/r2/pricing/) includes 10 GB-month storage, one million Class A and ten million Class B operations/month; Standard excess is $0.015/GB-month, $4.50/million Class A and $0.36/million Class B operations. Internet egress has no R2 charge. These are account-wide included amounts, not a hard spend cap; use the dedicated backup size/operation policy below and billing alerts. No permanent-free or zero-invoice guarantee is made.
+
+### Ubuntu host setup (operator procedure, not executed)
+
+1. Approve instance/region/domain/budget and administrator source CIDRs. Use supported Ubuntu LTS x86-64; retain console/rescue access and a verified recovery method before hardening SSH. Add only the administrator's **public** SSH key. Never share a private key with the application or in chat.
+2. Create an individual sudo administrator account; verify key login in a second session before disabling root login. In a reviewed `/etc/ssh/sshd_config.d/` file set `PubkeyAuthentication yes`, `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, and `PermitRootLogin no`. Check effective `sshd -T`, including cloud-init snippets and Match blocks, then `sshd -t` and reload SSH. Keep the original session open until the new path works; a lost key requires console/rescue, not a publicly exposed emergency login.
+3. Configure **both** Hetzner Cloud firewall and host firewall for IPv4 and IPv6: SSH/TCP 22 only from approved admin CIDRs; public TCP 80 and 443 for Caddy; deny other inbound traffic. Do not publish 5432, 8081, 2019 or Docker APIs. HTTP/3 UDP is not required by the initial config. Preserve required ICMP/IPv6 neighbor/MTU behavior. With no approved IPv6 administration path, do not accidentally permit SSH from all IPv6.
+4. Install Docker Engine/Compose from the [official Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/), checking signing key/repository and supported versions. Docker-published ports can bypass UFW; the absence of app/database port publication, upstream cloud firewall and Docker forwarding rules are essential. Do not assume UFW alone protects a published port. Do not disable Docker firewall management as a workaround. Verify actual nftables/iptables rules and exposure from an independent network before release.
+5. Keep the Docker socket root-only and unmounted in every app service. Docker-group membership is root-equivalent; use sudo for the trusted operator, no web UI/remote Docker TCP listener, no unattended prune commands and no unrelated workloads on this VM. Review Docker/default seccomp/AppArmor rather than running privileged containers.
+6. Apply security updates, verify `unattended-upgrades`/security origins and review `/var/run/reboot-required` on a maintenance schedule. Ubuntu archive automation does not necessarily patch Docker's external repository or containers; review/pin/rebuild those deliberately. Never auto-reboot during writes without an operator window. References: [Ubuntu security updates](https://documentation.ubuntu.com/security/security-updates/).
+7. Enable/check time synchronization (`timedatectl status` and the selected NTP service), use UTC host logs, and set a bounded persistent journal (for example SystemMaxUse=200M). Do not dump environment files with `docker compose config` or `docker inspect` into public logs.
+8. Keep packages minimal: Docker/Compose, OpenSSH, firewall/time/update tools, Python 3 if required by verification, age and AWS CLI v2 for backup transport. No Java/Node/Maven production build toolchain is needed. Install only reviewed packages/releases and verify checksums; host commands in this document are not installation authorization for a real server.
+
+The dedicated production Compose configuration and environment template are under `infra/production/`. Keep secret files under a root-controlled directory outside Git (for example `/etc/belsen/` with directory 0700). Inject random database passwords as files; never put them in shell history, environment examples or command arguments. Use the exact Compose project and volume names in the prepared files; inspect for conflicts before first startup.
+
+### Four-gigabyte resource and disk budget
+
+The Compose limits are the source of truth. The intended allocation is app 1536 MiB, PostgreSQL 768 MiB and Caddy 128 MiB; reserve remaining RAM for Linux, Docker, page cache and an occasional bounded backup job. Java remains container-aware, uses a bounded heap and exits on OOM rather than remaining partially healthy. A small heap is not the process's full RSS: thread stacks, native buffers, code cache and metaspace also consume memory. Pool/thread/connection limits prevent default concurrency from consuming the reserve. These are initial settings, not capacity or uptime guarantees.
+
+PostgreSQL begins with 128 MiB shared buffers, 4 MiB work_mem, 64 MiB maintenance_work_mem and 30 connections; each active sort/hash can allocate work_mem independently. App Hikari pool stays below database max, reserving headroom for Flyway, administration and backups. Do not tune from idle RSS alone. Measure on the actual CX23 with realistic synthetic data before widening access.
+
+Use restart-on-failure/unless-stopped behavior only as recovery assistance. On JVM OOM, the process exits, in-flight requests fail and committed transactions remain in PostgreSQL; inspect memory events before restart loops. On database/container crash, let PostgreSQL recover WAL on its existing volume. Stop/reduce traffic and investigate instead of increasing limits beyond 4 GB. Never disable fsync/full-page writes or delete WAL to save memory/disk. A small encrypted-host swap allocation is an operator choice to protect administration during pressure, not extra application capacity; containers should have explicit swap policy.
+
+Budget the 40 GB disk approximately: 8 GB OS/tools, 3 GB Docker/runtime images (retain current and one compatible rollback artifact), up to 16 GB PostgreSQL data/indexes/WAL, at most 2 GB encrypted staging, 1 GB bounded logs/journal and 10 GB reserve. These are soft operational thresholds, not volume quotas. Alert at 70% and 85% filesystem usage and on abnormal WAL/backup growth; review both `df` and `docker system df`. Keep at least 20–25% free. The default volume is not expandable without a storage/migration plan. No frontend/backend compilation or Maven/npm caches on the VM; prebuild the image externally and remove only explicitly obsolete release images after checking rollback needs. Never use `docker system prune --volumes`.
+
+### Manual release and rollback gate
+
+There is currently no committed GitHub Actions workflow. This preparation does not enable production automation or create GitHub secrets. The first release is manual; an optional future workflow should run tests and produce artifacts without deploy credentials, with a separate protected approval job for deployment.
+
+1. Have the owner review/commit the prepared changes separately. Require clean source and record the full approved Git SHA; today's uncommitted local image is **not** an immutable release of the starting B4 SHA.
+2. On a trusted build machine use Java 21, Node 24 and `./scripts/build-production.sh`, the browser suites, production-stack rehearsal and encrypted-restore test. Review advisory results, secret scans and `git diff --check`. Preserve exact reports; failed checks block release.
+3. Build for Hetzner's architecture: `docker build --platform linux/amd64 -t belsen-ai:<approved-full-sha> .`. Inspect architecture, JAR assets/migrations and absence of local/test code; record JAR SHA-256 and Docker image ID. A tag alone is mutable; use a reviewed registry digest or verified local image ID. Registry publication or SSH/image transfer requires separate approval. Do not compile on the VPS.
+4. Reconfirm cost/stock and obtain explicit provisioning/domain/DNS/remote-access/deployment approvals. Pin the reviewed app artifact identity in the protected environment. Verify secrets/volume ownership, role privileges, firewall and proxy network subnet conflicts. Back up before an upgrade; do not start Caddy publicly merely to test its configuration.
+5. Start PostgreSQL and wait for authenticated readiness; start app, let Flyway apply approved migrations and Hibernate validate, and check database-backed readiness privately. Migration failure must stop the app/release: do not `clean`, `repair`, edit old migrations or restart with schema updates. Start/enable ingress only when readiness is verified. Run the smoke checklist below through the real origin before recording a successful deployment.
+6. For rollback, stop ingress/writes, take a fresh protected backup and capture the failed release identity/log request IDs without private payloads. Rehearse the previous image against a copy of the current schema; switch only if compatible. Keep secure config/providers/registration disabled. A data restore requires a separately approved loss window and isolated new target, session invalidation and verification before cutover. Never use `down -v` or a database rewind to conceal migration failure. Preserve the old database for investigation.
+
+PostgreSQL named volumes are host-local, **not high availability** and not an off-site backup. VM/disk/account failure interrupts all three services. Proposed objectives are RPO 24 hours after successful daily backup and RTO 2–4 hours if a replacement VM, keys and verified backup are available; measure and approve them in a timed off-site rehearsal. A whole-server snapshot helps rebuild OS/config but may be crash-consistent, is provider-local and may capture secrets; it does not replace an application-consistent encrypted PostgreSQL dump plus independently stored decryption identity.
+
+### Production smoke and recruiter checklist
+
+Use fictional individual accounts and non-destructive synthetic records. Preserve default public HTML allowlisting: loading a SPA document is public, but the React session gate and private API authorization still protect data. No server-rendered private data belongs in public HTML.
+
+| Check | Evidence required before recording a deployment |
+| --- | --- |
+| TLS and DNS | Correct authorized hostname, real publicly trusted chain/SAN/expiry; HTTP redirects to same approved HTTPS origin; renewal/CAA/firewall tested |
+| Public pages | Landing explains product/Java/PostgreSQL/security/optional AI and individual access request; sign-in usable; no signup available |
+| Direct routes/assets | Refresh every allowed SPA route; unauthenticated private routes gate to login; unknown API/private-file paths stay JSON errors, never HTML |
+| Authorization | Private API 401, other-account resource 404; no public actuator/configuration/database/app port |
+| CSRF/session | Missing/stale CSRF mutations fail, login rotates session/token, logout invalidates JDBC session, Secure/HttpOnly/Lax cookies present |
+| Registration | Runtime policy disabled; valid-CSRF direct register returns 403 without account/session creation; no hidden login bypass |
+| Product data | Create/edit measurable goal/plan/progress, task complete/reopen, scheduled habit/rest, dashboard and historical cutoffs using synthetic records |
+| Optional providers | Google hidden/disabled; Coach NOT_CONFIGURED with useful verified preview and zero outbound provider calls |
+| Persistence | Restart only the app and confirm committed synthetic records and intended JDBC-session behavior survive; never remove the DB volume |
+| Operations | Authenticated DB readiness, bounded logs, disk/RAM/process monitoring, successful encrypted upload and alert delivery, verified isolated restore |
+| Portfolio screenshots | Genuine landing/auth, dashboard, goals, tasks, habits, analytics and disabled Coach; fixture inference labeled explicitly; no personal names/emails/secrets |
+
+Choose a real recruiter access-request channel before public release; no email, domain, testimonial, live demo or provider result is invented here. Assign every approved reviewer an individual account, never shared administrator credentials. The technical controls do not create an email verification, invite or password reset service.
+
+### Approval boundary and pending decisions
+
+Local preparation can be reviewed without any cloud account. Separately approve: CX23 stock/region/all-in price or an explicitly priced alternative; Ubuntu image; domain and renewal cost; Cloudflare zone/DNS changes and DNS-only mode; SSH public keys/admin CIDRs/recovery; host/R2 creation and billing; R2 region/jurisdiction/private bucket/lifecycle/token scope; off-host encryption identity and alert destination; approved individual accounts/contact channel; remote provisioning; image publication/transfer and actual deployment. Google/Groq enablement, public signup, changes to architecture and Git commit/push each need separate approval.
+
+
+### Concrete configuration, accounts and backup operation
+
+Use `infra/production/compose.yaml`, `Caddyfile`, `proxy.caddy` and `environment.example`. The three password files are separate random admin/app/backup credentials. For Compose file secrets, container UIDs must be able to read the bind-mounted file: keep the **parent root-owned 0700**, with the individual mounted password files 0444 or reviewed UID-specific ownership. This does not make the files reachable through that parent by other host users. The app imports the uppercase config-tree key `SPRING_DATASOURCE_PASSWORD` so the existing Spring placeholder resolves the secret. Do not print `env`, `/proc` environments or expanded configuration. Secret rotation must update PostgreSQL roles as well as files; changing initialization files does not change existing roles/volumes.
+
+Before first startup, initialize only Caddy's certificate-volume ownership (substitute the exact pinned Caddy image from Compose):
+
+```sh
+docker volume create belsen-ai-production_caddy_data
+docker run --rm --network none --read-only --user 0:0 --cap-drop ALL --cap-add CHOWN \
+  -v belsen-ai-production_caddy_data:/data <PINNED_CADDY_IMAGE> chown 10001:10001 /data
+```
+
+This is an operator command for later approval, not executed on a real server. PostgreSQL's normal entrypoint initializes its own data volume and non-superuser roles only when empty. App owns only the application database/schema (needed for this single-datasource Flyway design); backup has connect/usage/select plus default SELECT privileges on new app-owned public tables/sequences, not cluster-wide read or superuser rights. Never give the public app admin/bootstrap credentials. The PostgreSQL health check performs an authenticated SELECT; app TCP liveness is complemented by database-backed smoke checks. HTTPS terminates at Caddy on the same host; the private Docker links do not use TLS. Remote databases require a separate certificate-verified TLS design.
+
+To approve an individual account without enabling signup, use the offline `com.belsenai.identity.tools.PreviewAccountSql` helper from the verified JAR on an administrator's trusted Java 21 workstation:
+
+```sh
+mkdir -m 700 /private/operator-chosen-directory
+java -Dloader.main=com.belsenai.identity.tools.PreviewAccountSql -cp <VERIFIED_JAR> \
+  org.springframework.boot.loader.launch.PropertiesLauncher /private/operator-chosen-directory/approved.sql
+```
+
+Choose an actual private path; the literal example is not a file to create automatically. The console prompts identity fields and password twice, validates the same registration policy and creates a new 0600 SQL file with a salted BCrypt hash. It opens no server/DB/network, and never changes the signup flag. Review/apply that file through protected PostgreSQL `psql -v ON_ERROR_STOP=1` stdin on the approved private connection, then delete it. It contains a hash and identity metadata, so treat it as sensitive. Give each reviewer an individual credential through an approved private channel, never a shared admin login or screenshots. The helper refuses overwrite/symlink output; no emergency login/backdoor exists. Reset/revocation procedures and an access-request contact channel still need owner decisions.
+
+Backup host dependencies are Python 3, age and AWS CLI v2, from approved packages/releases. Keep the age **private identity off-server** with a separately secured recovery copy. `/etc/belsen/backup-recipients.txt` holds public recipients only. `/etc/belsen/r2-credentials` is root-owned 0600 with a `[belsen-r2]` profile; use a dedicated Object Read & Write token scoped to a single private bucket. Do not grant bucket/account administration or enable public URLs/r2.dev. Administer lifecycle separately with a different approved credential. No upload token is embedded in Compose.
+
+Copy `infra/production/backup.env.example` outside Git to `/etc/belsen/backup.env`, install scripts at `/opt/belsen/scripts/production/`, create `/var/lib/belsen-backups` root-owned 0700 and review/copy the five systemd units from `infra/production/systemd/`. After a manually verified first upload and real restore, enable the daily backup and hourly freshness timers with `systemctl enable --now belsen-backup.timer belsen-backup-freshness.timer`. Do not enable them until the private R2 endpoint/bucket/credentials, lifecycle and alert delivery are approved.
+
+`backup.py` streams PostgreSQL 17 custom-format dumps straight into age; it never stages a plaintext dump. The script checks child exit status, encrypted SHA-256/size, upload HEAD metadata and a complete encrypted download hash before marking success, then retains two local encrypted files. It fails closed at 512 MiB per dump, 2 GiB local staging budget, 16 objects or 8 GiB remote prefix budget. The UTC timer runs daily at 02:15 with up to 15 minutes jitter; freshness beyond 26 hours fails and journals an alert. Concurrent invocations lock. Failed uploads do not silently delete backup history. Journal alerts **do not constitute remote notification**: connect and test an owner-selected delivery path before operating real data.
+
+Approve an **eight-day expiry** lifecycle for prefix `belsen/production/postgres/`, abort incomplete multipart uploads after one day, and monitor lifecycle deletion lag. At one dump/day and the 512 MiB ceiling, eight daily objects use at most 4 GiB (about 4.3 decimal GB) before lag/retries, leaving headroom within a dedicated 10 GB Standard allowance. Other account usage is shared. The explicit remote count/byte cap fails rather than buying space; it is not a Cloudflare billing cap. Review backup size/count every day and failed freshness hourly; increase retention/limits only after budget approval.
+
+For restoration, download the encrypted object using protected credentials, compare SHA-256 against the retained local manifest or verified private-object HEAD metadata, and decrypt with the **off-host** age identity into `pg_restore` on a new isolated PostgreSQL 17 database. For example, `age --decrypt -i <PRIVATE_IDENTITY_FILE> <ENCRYPTED_DUMP> | pg_restore --dbname=service=belsen-restore --no-owner --no-acl --exit-on-error` with shell pipefail; never point this at an existing development/production database. An age authentication failure, bad checksum, nonzero dump/restore exit, missing migration or mismatch blocks cutover. Re-establish database owner/default backup grants (dumps exclude ACLs), validate V1–V7/Hibernate/constraints/history and representative reports, invalidate restored sessions, and keep Coach disabled for ledger reconciliation as described above. Measure off-site key retrieval and restore time; a successful local synthetic rehearsal is not proof of R2 permissions, bucket privacy, lifecycle or disaster recovery.
+
+Local commands: after the combined build and `docker build -t belsen-ai:deployment-prep-local .`, run `python3 scripts/production/verify-local.py --image belsen-ai:deployment-prep-local --age-dir <DIRECTORY_WITH_AGE_AND_AGE_KEYGEN>` and `python3 -m unittest discover -s scripts/production -p 'test_*.py'`. The stack uses unique disposable names, loopback high ports, copied configuration and Caddy internal CA explicitly trusted by Python. No certificate-validation bypass, public ACME, DNS/R2 call or existing database is used. Test helpers also require htpasswd to generate a synthetic fixture hash; actual account provisioning uses the Java console helper. Existing browser suites separately retain their pre-existing self-signed test-certificate handling; do not confuse them with the new CA-verified Caddy check.
+
+### Local preparation verification, November 21, 2026
+
+Starting repository: clean `main` at `ecb26acea663017b226a9b913625e31233004211`. Changes remain uncommitted and unstaged; this is not a new published release. Java 21.0.11, Node 24.22.1 and Docker Desktop 29.9.2 were used. No cloud resources, domains, DNS, R2 credentials or live Google/Groq calls were used.
+
+| Local gate | Actual result |
+| --- | --- |
+| Frontend typecheck / ESLint / build | Passed; locked `npm ci` unchanged dependency versions |
+| Frontend tests | 267 passed, including registration-policy UI cases |
+| Maven verify | 299 passed: 86 unit/security/configuration and 213 PostgreSQL integration; no failures/errors/skips in completed rerun |
+| PostgreSQL | Fresh V1–V7, Hibernate validate, disabled signup/approved-account sessions and unchanged existing regressions passed |
+| Existing Chromium suites | 8 mocked shell + 6 mocked Coach + 24 real backend + 8 packaged HTTPS + 6 deterministic-provider cases = 52 passed |
+| Backup transport/freshness fixtures | 5 unit tests passed, including encrypted-upload roundtrip fixture, corruption/bad hash rejection, secret permissions, stderr suppression and stale/future freshness rejection |
+| Production Caddyfile | Offline validation passed using pinned image and no network |
+| Local topology | Unique disposable Caddy/app/PG stack, no app/DB published ports, trusted local CA/hostname verification, registration-off 403, login, CSRF, non-superuser app role and seven migrations passed |
+| Backup restoration | Actual pg_dump17 → age stream → decryption → separate empty PG17 database restored representative goal/user data and all seven migration records; corrupt ciphertext rejected |
+| Image preparation | Native local image and linux/amd64 image built; x86 image ID `sha256:dda2cc088710baef596f595d9e6c592a36de02e25750d13f74138625061b934b`; no registry publication |
+| Dependencies | Both npm audits reported zero vulnerabilities; OSV returned no matches for 152 resolved Java runtime/test coordinates |
+| Artifact review | SPA and seven migrations included; local HTTP config, test launchers and fixture assets absent; intentional offline account utility present |
+
+The new topology check uses a CA-verified Python HTTPS client, not a browser that bypasses certificate validation. Its local high-port redirect fixture is distinct from production ACME; the production configuration separately validates automatic redirects. Existing browser suites keep their explicit test-only registration enablement and pre-existing self-signed-certificate harness; they do not prove live Cloudflare/Let's Encrypt/Hetzner behavior. Scoped axe checks belong to those browser suites, not a new accessibility certification.
+
+Initial interrupted Maven initialization failed because Docker was stopped; the completed rerun above is the evidence. Local topology work found and corrected a file-secret name precedence issue, replaced the failing bind-mounted shell bootstrap with SQL, narrowed backup grants and fixed conflicting subprocess-capture options that prevented backup creation. Later fixture-only redirect/copy/name-collision errors were investigated; failed runs are not counted as passes. No authentication bypass, constraint removal, old migration edit or certificate-validation disablement was used to make checks pass.
+
+A short native Docker Desktop rehearsal observed approximately 361 MiB app RSS/cgroup usage, 48 MiB PostgreSQL and 17 MiB Caddy after startup and a small synthetic workflow. This is a sample, not a peak/load test, x86 benchmark, VM capacity guarantee or production memory measurement. Container ceilings remain 1536/768/128 MiB with swap ceilings equal to memory limits. Recheck on the actual CX23 before accepting a larger audience.
+
+The current JAR SHA-256 is `adce6455a126338de00f2e46ab045f5b5a370ed616085b8e0141ccb067fb22ed`. Local image identities describe uncommitted preparation inputs, not an immutable deployment of the old Git SHA. Scan/patch the selected runtime images and host packages before release; npm/OSV results do not establish absence of OS vulnerabilities.
+
+Remaining external gates: instance stock and all-in quote/tax/domain approval; Ubuntu/SSH/cloud and host firewall rehearsal; public certificate issuance/renewal and DNS; true external port scan and client-IP behavior; R2 private access/token/lifecycle/overage checks; encrypted off-site download/restore with the separately held identity; actual alert delivery; timed recovery/rollback and approved reviewer accounts/contact channel. Linux systemd units were reviewed locally but not executed on an Ubuntu server. Until these pass, this is **local deployment preparation**, not a publicly deployed or infrastructure-verified service.
+
+
+Final local rehearsal completed successfully: HTTP redirect, forwarded-header overwrite, CA-verified HTTPS, closed signup, authenticated CSRF/session flows, database-scoped roles, encrypted backup CLI, separate PostgreSQL restore, ciphertext corruption rejection, app restart persistence and logout. Disposable rehearsal containers/networks/volumes were removed. Credential-pattern/artifact checks, local documentation links and `git diff --check` passed. No migration or dependency version changed. The index is empty and HEAD remains the starting B4 commit.
+
+Changed-file scope (38 paths; nothing staged):
+
+```text
+.env.example
+.gitignore
+README.md
+backend/src/main/java/com/belsenai/config/SecurityConfig.java
+backend/src/main/java/com/belsenai/identity/controller/AuthController.java
+backend/src/main/java/com/belsenai/identity/service/AccountService.java
+backend/src/main/java/com/belsenai/identity/service/GoogleAccountService.java
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application.yml
+docs/API.md
+docs/ARCHITECTURE.md
+docs/DECISIONS.md
+docs/DEPLOYMENT.md
+docs/ROADMAP.md
+frontend/scripts/browser-backend.mjs
+frontend/src/app/App.tsx
+frontend/src/features/auth/AuthPage.test.tsx
+frontend/src/features/auth/AuthPage.tsx
+backend/src/main/java/com/belsenai/identity/security/RegistrationPolicy.java
+backend/src/main/java/com/belsenai/identity/tools/PreviewAccountSql.java
+backend/src/test/java/com/belsenai/identity/RegistrationPolicyIT.java
+backend/src/test/java/com/belsenai/identity/RegistrationPolicyTest.java
+backend/src/test/java/com/belsenai/identity/tools/PreviewAccountSqlTest.java
+infra/production/Caddyfile
+infra/production/backup.env.example
+infra/production/compose.yaml
+infra/production/environment.example
+infra/production/postgres-init.sql
+infra/production/proxy.caddy
+infra/production/systemd/belsen-backup-alert.service
+infra/production/systemd/belsen-backup-freshness.service
+infra/production/systemd/belsen-backup-freshness.timer
+infra/production/systemd/belsen-backup.service
+infra/production/systemd/belsen-backup.timer
+scripts/production/backup.py
+scripts/production/run-backup.sh
+scripts/production/test_backup.py
+scripts/production/verify-local.py
+```

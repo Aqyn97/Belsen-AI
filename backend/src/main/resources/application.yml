@@ -41,6 +41,8 @@ server:
     include-exception: false
 
 belsen:
+  registration:
+    enabled: ${BELSEN_REGISTRATION_ENABLED:false}
   google:
     enabled: ${BELSEN_GOOGLE_ENABLED:false}
     client-id: ${BELSEN_GOOGLE_CLIENT_ID:}

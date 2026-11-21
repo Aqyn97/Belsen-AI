@@ -55,7 +55,7 @@ try {
   const javaArgs = packaged && !coachFixture ? ['-jar',jar] : [`-Dloader.path=${fixturePath}`, `-Dloader.main=org.belsenfixture.${coachFixture ? 'CoachBrowserFixtureApplication' : 'BrowserFixtureApplication'}`, '-cp', jar, 'org.springframework.boot.loader.launch.PropertiesLauncher'];
   backend = spawn('java',javaArgs,{stdio:'inherit', env:{...process.env,
     SPRING_PROFILES_ACTIVE:packaged?'production':'local', SPRING_DATASOURCE_URL:`jdbc:postgresql://${binding}/belsen_browser`,
-    SPRING_DATASOURCE_USERNAME:'postgres', SPRING_DATASOURCE_PASSWORD:password, BELSEN_SERVER_PORT:packaged?'18443':'18081', BELSEN_GOOGLE_ENABLED:'false',
+    SPRING_DATASOURCE_USERNAME:'postgres', SPRING_DATASOURCE_PASSWORD:password, BELSEN_SERVER_PORT:packaged?'18443':'18081', BELSEN_GOOGLE_ENABLED:'false', BELSEN_REGISTRATION_ENABLED:'true',
     ...(coachFixture ? {BELSEN_COACH_ENABLED:'true', BELSEN_COACH_API_KEY:'fixture-not-a-live-key', BELSEN_COACH_FREE_PLAN_CONFIRMED:'true', BELSEN_COACH_PRIVACY_REVIEWED:'true'} : {BELSEN_COACH_ENABLED:'false'}),
     ...(packaged ? {BELSEN_PUBLIC_BASE_URL:'https://localhost:18443',BELSEN_TLS_KEY_STORE:keyStore,BELSEN_TLS_KEY_STORE_PASSWORD:tlsPassword} : {}),
   }});

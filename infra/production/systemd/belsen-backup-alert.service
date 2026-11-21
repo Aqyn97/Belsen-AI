@@ -1,0 +1,10 @@
+[Unit]
+Description=Record a Belsen backup failure for operator monitoring
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger -p daemon.alert -t belsen-backup Backup or freshness check failed; inspect systemctl status and private backup configuration.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

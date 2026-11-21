@@ -16,6 +16,8 @@ Belsen-AI helps people turn measurable goals into daily tasks and routines, then
 | AI Coach | Explicit evidence preview and optional Groq ranking of Java-defined actions; disabled by default |
 | Production packaging | React and REST in one Spring Boot JAR; HTTPS configuration and non-root runtime image |
 
+**Local deployment preparation:** a dedicated Hetzner/Caddy/PostgreSQL topology and encrypted backup tooling are prepared; see the [runbook](docs/DEPLOYMENT.md#hetzner-controlled-portfolio-preview). Production self-registration defaults off; approved individual accounts use an offline operator procedure. Local development explicitly permits signup.
+
 **Not publicly deployed.** Live Google login and live Groq inference remain unverified. Immutable report finalization, password recovery, email verification and CI automation are not implemented. Closed reports are explicitly **closed, not finalized**. No demo URL, live-provider screenshot or user statistics are claimed.
 
 ## Engineering choices
