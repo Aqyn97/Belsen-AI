@@ -504,3 +504,12 @@ The optional dedicated Compose topology uses Caddy as the sole published service
 Self-registration defaults off, the explicit local profile defaults on, and a public no-store policy drives the signup UI without changing login/session behavior. The standalone PreviewAccountSql utility only prepares a private salted-hash SQL file when explicitly invoked through an interactive console. It starts no Spring context, HTTP server or database connection. Production artifacts intentionally include this operator utility; test clock/provider launchers remain excluded.
 
 Current CSRF defenses are secret session-bound tokens, rotated session security state, secure cookies and same-origin browser requests. There is no independent Origin-header allowlist or CORS relaxation; do not claim one was tested. Caddy overwrites forwarding headers and the backend trusts only its fixed private peer. See DEPLOYMENT.md for the trust boundary and local versus cloud evidence.
+
+
+## Portfolio and separate application hosting routes
+
+The standalone `showcase/` is the selected Cloudflare Pages Free publication target. It has no JavaScript runtime, authenticated API request or dependency on Java/PostgreSQL. No Launch App link is emitted by default. A future link requires an operator-verified public HTTPS DNS origin and explicit build attestation; Render domains are rejected.
+
+Oracle Always Free ARM is a proposed full-stack route using the existing Java/React image, PostgreSQL 17 and Caddy on one VM. A separate Compose override selects ARM64, project/resources and exact private proxy peers while reusing the unchanged paid Hetzner base. All authenticated traffic stays on the application's one HTTPS origin; session, CSRF, ownership, history and migration behavior are preserved. Local native ARM compatibility passes; actual Oracle eligibility, stock, card verification, IP/HTTPS and reclamation/backup operations remain external gates.
+
+Render/Neon configuration is an opt-in, unvalidated archive, not approved for production. Its failure and narrow memory headroom remain documented rather than hidden. It is not enabled by the Oracle or Hetzner model. No new schema, infrastructure, provider activation or public deployment is implied. See [hosting options](FREE_HOSTING.md), [Oracle preparation](ORACLE_ARM.md), [Render archive](RENDER_EXPERIMENT.md) and [verification](FREE_HOSTING_VERIFICATION.md).

@@ -1,0 +1,12 @@
+# Proposed Oracle-only environment. Copy outside the checkout; chmod 0600.
+# Merge the production base with infra/oracle/compose.yaml, in that order.
+# Use a verified linux/arm64 image identity, NOT the experimental Render image/profile.
+BELSEN_APP_IMAGE=
+# Owner-controlled public DNS hostname with valid public HTTPS. No scheme/path/port.
+# Oracle does not supply a free public application hostname; this is a launch blocker.
+BELSEN_DOMAIN=
+BELSEN_ACME_EMAIL=
+# Protected absolute paths; retain the UID/readability rules in docs/DEPLOYMENT.md.
+BELSEN_POSTGRES_ADMIN_PASSWORD_FILE=
+BELSEN_DB_PASSWORD_FILE=
+BELSEN_POSTGRES_BACKUP_PASSWORD_FILE=

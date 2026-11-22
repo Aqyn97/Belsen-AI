@@ -4,6 +4,15 @@
 
 Belsen-AI helps people turn measurable goals into daily tasks and routines, then review what they actually accomplished. This personal portfolio project emphasizes Java backend engineering: ownership, concurrent writes, auditable history and trustworthy reporting.
 
+| Public destination | Current status |
+| --- | --- |
+| Portfolio | Not deployed · future `https://<project>.pages.dev` |
+| Interactive application | Not deployed · Oracle ARM proposed; no verified public URL |
+
+[![Genuine Belsen-AI dashboard with fictional local test data](showcase/assets/dashboard.png)](showcase/assets/dashboard.png)
+
+*Actual production-JAR interface captured against local HTTPS and PostgreSQL. Fictional test data, not a live deployment or user statistics. [Analytics capture](showcase/assets/analytics.png) · [screenshot provenance](showcase/README.md#screenshot-provenance).*
+
 ## What works
 
 | Area | Implemented behavior |
@@ -16,9 +25,11 @@ Belsen-AI helps people turn measurable goals into daily tasks and routines, then
 | AI Coach | Explicit evidence preview and optional Groq ranking of Java-defined actions; disabled by default |
 | Production packaging | React and REST in one Spring Boot JAR; HTTPS configuration and non-root runtime image |
 
-**Local deployment preparation:** a dedicated Hetzner/Caddy/PostgreSQL topology and encrypted backup tooling are prepared; see the [runbook](docs/DEPLOYMENT.md#hetzner-controlled-portfolio-preview). Production self-registration defaults off; approved individual accounts use an offline operator procedure. Local development explicitly permits signup.
+**Free portfolio preparation:** the independent static showcase targets Cloudflare Pages Free. Oracle Always Free ARM is the proposed full Java/React/PostgreSQL route, subject to account/card verification, capacity and public HTTPS. Render Free is **not approved for production**; its experiment is retained separately. [Manual publication and hosting options](docs/FREE_HOSTING.md) · [local verification](docs/FREE_HOSTING_VERIFICATION.md).
 
-**Not publicly deployed.** Live Google login and live Groq inference remain unverified. Immutable report finalization, password recovery, email verification and CI automation are not implemented. Closed reports are explicitly **closed, not finalized**. No demo URL, live-provider screenshot or user statistics are claimed.
+**Existing VPS alternative:** a dedicated Hetzner/Caddy/PostgreSQL topology and encrypted backup tooling are prepared; see the [runbook](docs/DEPLOYMENT.md#hetzner-controlled-portfolio-preview). Production self-registration defaults off; approved individual accounts use an offline operator procedure. Local development explicitly permits signup.
+
+**Not publicly deployed.** Live Google login and live Groq inference remain unverified. Immutable report finalization, password recovery, email verification and CI automation are not implemented. Closed reports are explicitly **closed, not finalized**. No live URL, live-provider screenshot or user statistics are claimed. The configured GitHub source URL currently returns 404 to verification clients; public links are hidden in the showcase. [Tracked-file/history audit](docs/PUBLIC_SOURCE_AUDIT.md) records the accepted historical disclosure and portable current references. The repository stays private. The static site can be published independently.
 
 ## Engineering choices
 
@@ -91,13 +102,15 @@ This runs locked frontend installation, typecheck, ESLint, unit tests and produc
 
 Browser suites run from `frontend/` after packaging: `npm run e2e` (mocked shell), `npm run e2e:coach` (mocked Coach API), `npm run e2e:real` (real Java/PostgreSQL), `npm run e2e:packaged` (production JAR/local HTTPS), and `npm run e2e:coach:real` (real Java/PostgreSQL/HTTPS with a test-only ranking bean). Fixtures do not demonstrate live Google or Groq.
 
-See the [B4 release audit](docs/RELEASE_READINESS.md) for fresh results, findings and external prerequisites. [Deployment instructions](docs/DEPLOYMENT.md) cover TLS, secrets, restricted proxy trust, backups, restore and rollback. Deployment needs separate approval and an explicit registration policy; the current MVP has no email verification or password reset.
+Retained backend checks cover the experimental Render guard, PostgreSQL certificate/hostname verification and a bounded Flyway pool. Focused portfolio checks cover the static build, desktop/mobile Chromium and accessibility; native ARM image and Compose rehearsals verify the proposed Oracle package locally. `node showcase/build.mjs` builds the public page without dependencies; its launch destination stays absent until explicitly configured. [Current results and resource measurements](docs/FREE_HOSTING_VERIFICATION.md) distinguish local simulations from actual provider verification.
+
+See the [B4 release audit](docs/RELEASE_READINESS.md) for that checkpoint’s results, findings and external prerequisites. [Deployment instructions](docs/DEPLOYMENT.md) cover TLS, secrets, restricted proxy trust, backups, restore and rollback. Deployment needs separate approval and an explicit registration policy; the current MVP has no email verification or password reset.
 
 ## Explore the project
 
 - [Architecture and tradeoffs](docs/ARCHITECTURE.md) · [technical decisions](docs/DECISIONS.md)
 - [API contracts](docs/API.md) · [AI Coach design and privacy](docs/AI_COACH_DESIGN.md)
 - [Product vision](docs/PRODUCT_VISION.md) · [roadmap](docs/ROADMAP.md)
-- [Contributing](CONTRIBUTING.md) · [genuine screenshot plan](docs/RELEASE_READINESS.md#portfolio-evidence)
+- [Contributing](CONTRIBUTING.md) · [genuine screenshots](showcase/README.md#screenshot-provenance)
 
 No license has been selected. Repository visibility, licensing and public hosting are owner decisions; a public source listing alone does not grant an open-source license.

@@ -1,5 +1,7 @@
 # Production integration and deployment preparation
 
+For the selected **Cloudflare Pages Free static showcase**, use [FREE_HOSTING.md](FREE_HOSTING.md). [Oracle ARM](ORACLE_ARM.md) is a separate proposed full-stack route; Render Free is unvalidated and not approved for production. No route is publicly deployed. The Hetzner configuration and procedures below remain available unchanged.
+
 **Current work package: local Hetzner/Caddy/PostgreSQL preparation, November 21, 2026.** See [the target runbook](#hetzner-controlled-portfolio-preview) below. Nothing here authorizes a purchase, DNS change, remote login, deployment, provider enablement or Git publication. Older dated verification below is historical evidence, not proof of current cloud infrastructure.
 
 The website and API ship in one Spring Boot JAR. Day 7 adds optional Coach ranking and its interface, disabled by default. No public deployment has been performed. Live Google/Groq verification, immutable report finalization and CI automation remain pending. Historical checkpoint results below retain their original dates; see RELEASE_READINESS.md for the current audit.

@@ -1,0 +1,26 @@
+# PROPOSED Oracle ARM route; no provisioning or deployment is authorized.
+# Merge AFTER infra/production/compose.yaml; never use this override alone.
+# Requires Docker Compose 2.24.4+ for !override.
+# Relative bind paths resolve against the first (production) file.
+name: belsen-ai-oracle-preview
+services:
+  postgres:
+    image: postgres:17.11-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    platform: linux/arm64
+    cpus: 0.5
+  app:
+    platform: linux/arm64
+    environment:
+      BELSEN_TRUSTED_PROXY_REGEX: '172[.]30[.]50[.]2'
+    networks:
+      proxy:
+        ipv4_address: 172.30.50.3
+  caddy:
+    platform: linux/arm64
+    networks:
+      proxy:
+        ipv4_address: 172.30.50.2
+networks:
+  proxy:
+    ipam:
+      config: !override [{subnet: 172.30.50.0/28}]

@@ -201,3 +201,12 @@ Keep three services on the proposed 4 GB x86-64 VPS: existing packaged Java/Reac
 Registration is disabled by default with explicit local opt-in behavior. Approved individual accounts are prepared offline with the existing validation/BCrypt encoder; no bypass login or public provisioning API is added. Backup scripts stream pg_dump to age and confirm encrypted uploads before marking success. Systemd journaling/freshness checks need a separately tested external alert channel.
 
 All infrastructure, DNS, R2 access, publication and public deployment require separate approval. CX23 stock and the all-in budget are external gates; do not substitute a higher-cost or ARM server silently. See DEPLOYMENT.md for exact configuration, costs and remaining decisions.
+
+
+## D24: standalone free portfolio first; full-stack hosting remains conditional
+
+Select the dependency-free static showcase on Cloudflare Pages Free as the first public release route. It uses real fictional-fixture screenshots, no authenticated network requests and no application launch link by default. Future links require a verified public HTTPS origin and explicit operator attestation. Keep Render/Neon work isolated as unvalidated experimental configuration; Render Free is not approved for production after the failed 0.1 CPU run and 4.6% memory headroom in the passing 1 CPU run. Do not continue tuning it in this package.
+
+Prepare Oracle Always Free ARM as a separate proposal: one A1 VM with 2 OCPUs and sufficient RAM, the existing Java/React ARM64 image, PostgreSQL 17 and Caddy. Reuse the unchanged Hetzner base through an ARM-specific Compose override, with a separate project/subnet and immutable image identities. Preserve secret files, private app/database ports, exact proxy trust and the normal production profile; do not import the experimental Render settings.
+
+Local ARM build/startup, migrations, authentication/CSRF, backup/restore and restart are evidence of compatibility, not Oracle stock, cloud performance or availability. Oracle card verification, eligibility, idle reclamation, storage, public IP/HTTPS and independent recovery remain explicit gates. No resource creation, account, purchase, DNS change or website deployment is authorized here. The owner separately authorized the reviewed private Git commit and normal push, without changing visibility or history. The optional paid Hetzner route remains unchanged. See FREE_HOSTING.md, ORACLE_ARM.md and FREE_HOSTING_VERIFICATION.md.

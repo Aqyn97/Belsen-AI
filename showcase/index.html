@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Belsen-AI: a Java and React portfolio project for measurable goals, daily routines and trustworthy progress reporting.">
+  <meta name="theme-color" content="#FACC15">
+  <title>Belsen-AI — A little direction. Every day.</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="wrap header">
+  <a class="wordmark" href="/" aria-label="Belsen-AI home">belsen<span>.</span></a>
+  <nav aria-label="Main navigation"><a href="#product">The product</a><a href="#engineering">The engineering</a><!-- SOURCE_NAV --></nav>
+</header>
+<main id="main">
+  <section class="wrap hero" aria-labelledby="hero-title">
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span> A personal growth platform · An engineering portfolio</p>
+    <h1 id="hero-title">A little direction.<br><span class="highlight">Every day.</span></h1>
+    <div class="hero-bottom"><p class="lead">Turn a goal into a plan. Build a routine.<br>See the progress you actually made.</p><div class="actions"><!-- LAUNCH --><!-- SOURCE_HERO --></div></div>
+    <p class="hosting-note" id="app-status"><!-- APP_STATUS --></p>
+  </section>
+  <figure class="wrap product-shot">
+    <div class="window-bar" aria-hidden="true"><span>THE WORKSPACE</span><span>Plan better. Stay consistent. Grow.</span></div>
+    <a href="/assets/dashboard.png" aria-label="View the full genuine dashboard screenshot"><img src="/assets/dashboard.png" width="1280" height="1560" alt="Belsen-AI dashboard showing task completion, strict habit consistency and weekly reading progress from a local test account." fetchpriority="high"></a>
+    <figcaption>Actual application, captured against Spring Boot and PostgreSQL with fictional test data. Screenshot values are fixture examples, not user statistics or a live deployment.</figcaption>
+  </figure>
+  <section class="wrap section" id="product" aria-labelledby="product-title">
+    <div class="section-heading"><p class="eyebrow">01 / The product</p><h2 id="product-title">Small actions.<br>Honest progress.</h2><p>A calm workspace for choosing what matters, doing the work and understanding the week.</p></div>
+    <div class="feature-grid">
+      <article><span class="index">01</span><h3>Goals with real units</h3><p>Record pages, kilometres or your own measurable units. Weekly plans and auditable corrections keep progress explicit.</p></article>
+      <article><span class="index">02</span><h3>Tasks with a memory</h3><p>Complete, reopen and reschedule. Immutable history preserves the original obligation when plans change.</p></article>
+      <article><span class="index">03</span><h3>Routines that respect rest</h3><p>Schedule habits, check in daily and plan future rest. Every scheduled non-rest habit counts toward a successful day.</p></article>
+      <article><span class="index">04</span><h3>Reports you can explain</h3><p>Frozen reporting timezones and historical cutoffs give each percentage a clear meaning. Missing data stays missing.</p></article>
+    </div>
+    <article class="coach-note"><h3>AI Coach, grounded in evidence</h3><p>Preview your verified progress before requesting suggestions. Optional AI ranks Java-defined actions; it cannot rewrite your goals, change records or invent a success score. The interface is implemented. Live inference is disabled and unverified.</p></article>
+  </section>
+  <section class="section contrast" aria-labelledby="engineering-title" id="engineering"><div class="wrap">
+    <div class="section-heading"><p class="eyebrow">02 / Under the surface</p><h2 id="engineering-title">Built around<br>data integrity.</h2><p>One Java modular monolith. One authenticated application origin. PostgreSQL as the source of truth.</p></div>
+    <ol class="architecture" aria-label="Portfolio and proposed application architecture"><li><span>Public showcase</span><strong>Cloudflare Pages</strong><small>Static HTML + CSS · Free</small></li><li><span>Proposed application host</span><strong>Oracle ARM</strong><small>Java 21 + Spring Boot + React · Eligibility pending</small></li><li><span>Persistent data</span><strong>PostgreSQL 17</strong><small>Private Docker network · Proposed on the ARM VM</small></li></ol>
+    <p class="architecture-note">The static showcase is the first release target. Oracle full-stack hosting is proposed, subject to eligibility and capacity. Application traffic will stay on one HTTPS origin. No public deployment is claimed.</p>
+    <div class="engineering-grid"><article><h3>Secure by default</h3><p>Server-side JDBC sessions. Secure, HttpOnly cookies. CSRF protection. Owner-scoped queries and versioned writes. Public signup and optional providers are disabled for the proposed preview.</p></article><article><h3>History over guesswork</h3><p>Flyway migrations and Hibernate validation. Append-only task and habit records. Idempotent progress submissions. One repeatable-read snapshot per dashboard response.</p></article><article><h3>Evidence before advice</h3><p>The optional AI Coach can rank only Java-defined actions from a bounded evidence preview. AI cannot change records or calculate authoritative metrics. Live Groq inference remains disabled and unverified.</p></article><article><h3>Tested across boundaries</h3><p>PostgreSQL Testcontainers, React component tests, real-backend Chromium journeys, packaged HTTPS checks and automated accessibility scans. Exact evidence lives in the repository.</p></article></div>
+  </div></section>
+  <section class="wrap section evidence" aria-labelledby="evidence-title"><div><p class="eyebrow">03 / A closer look</p><h2 id="evidence-title">No mystery<br>behind the numbers.</h2><p>Task obligations, daily consistency and explicit goal units stay separate. Historical reports disclose their cutoff and calendar status; closed reports are not yet immutable finalized snapshots.</p><!-- SOURCE_ARCH --><p class="caption">Genuine analytics capture from a local Java/PostgreSQL browser test. Fictional data; no live provider call.</p></div><a class="analytics-shot" href="/assets/analytics.png" aria-label="View the full genuine analytics screenshot"><img src="/assets/analytics.png" width="1280" height="2006" loading="lazy" alt="Historical analytics screen with explicit reporting week, cutoff and separate task and habit metrics."></a></section>
+  <section class="wrap closing"><p class="eyebrow">Made to be understood</p><h2>Explore the decisions.<br>Follow the evidence.</h2><!-- SOURCE_CLOSING --><p>Java 21 / Spring Boot / PostgreSQL / React / TypeScript</p><p id="release-status"><!-- SOURCE_STATUS --></p></section>
+</main>
+<footer class="wrap footer"><span class="wordmark">belsen<span>.</span></span><p>Plan better. Stay consistent. Grow.</p><!-- SOURCE_FOOTER --></footer>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# EXPERIMENTAL / UNVALIDATED. Render Free is NOT approved for production.
+# Preserved for review; do not use for Oracle or Hetzner. See docs/RENDER_EXPERIMENT.md.
+# Activate together, in this order: production,render. Not a standalone profile.
+# Render terminates HTTPS. Exact ingress peer addresses must be verified before launch.
+belsen:
+  public-base-url: ${RENDER_EXTERNAL_URL}
+server:
+  port: ${PORT:10000}
+  address: 0.0.0.0
+  ssl:
+    enabled: false
+  forward-headers-strategy: native
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 2
+    remoteip:
+      internal-proxies: ${BELSEN_TRUSTED_PROXY_REGEX}
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 0
+      connection-timeout: 30000
+      validation-timeout: 5000
+      idle-timeout: 30000
+      max-lifetime: 300000
+      keepalive-time: 0
+  session:
+    jdbc:
+      # Authorization still checks expiry on every access. This only removes old rows.
+      cleanup-cron: '0 0 3 * * *'

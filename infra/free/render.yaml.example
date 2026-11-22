@@ -1,0 +1,32 @@
+# EXPERIMENTAL ARCHIVE: Render Free is not approved for production.
+# No further optimization or deployment authorized; see docs/RENDER_EXPERIMENT.md.
+# Historical reference only; this is not an approved deployment template.
+# Replace the image with your reviewed linux/amd64 image digest in a public registry.
+# No database, disk, cron, worker, paid plan, or deploy hook is created here.
+services:
+  - type: web
+    name: belsen-ai-portfolio
+    runtime: image
+    plan: free
+    image:
+      url: ghcr.io/REPLACE_OWNER/belsen-ai@sha256:REPLACE_REVIEWED_DIGEST
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production,render
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms32m -Xmx160m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:ActiveProcessorCount=1 -XX:+ExitOnOutOfMemoryError
+      - key: BELSEN_TRUSTED_PROXY_REGEX
+        sync: false
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: BELSEN_REGISTRATION_ENABLED
+        value: 'false'
+      - key: BELSEN_GOOGLE_ENABLED
+        value: 'false'
+      - key: BELSEN_COACH_ENABLED
+        value: 'false'
