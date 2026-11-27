@@ -36,6 +36,14 @@ The new workflow has not run on GitHub: it remains uncommitted. Standard `ubuntu
 
 No critical/high/medium issue was identified within this preparation. Remaining gates are owner review and separate Git publication approval, the first actual hosted CI run, separate website publication approval, and Cloudflare account/repository integration plus actual edge/URL verification. Source links require their own privacy decision and remain hidden; the application launch link stays absent. No public portfolio URL is fabricated. License selection remains an owner decision. No staging, commit, push, visibility change or deployment occurred.
 
+## CI bootstrap correction — November 27, 2026
+
+The first hosted workflow at `6ba05a91957d901b53ef603df7dbac68ecc94d51` passed the web job but failed before Maven started: `wget: Failed to fetch` the pinned Maven 3.9.12 ZIP. Docker initialization passed. No PostgreSQL container, migration or backend test had run; this was not a database assertion failure. Quiet wget omitted the underlying HTTP/TLS reason, so a more specific network diagnosis is not supported by that log. The same official archive was subsequently available over verified HTTPS.
+
+The wrapper now prefers curl with three retries, bounded connection/transfer timeouts and visible errors, retaining wget/Java fallback. This path requires curl 7.71+ for `--retry-all-errors`; current macOS and Ubuntu 24.04 CI tools support it. The official ZIP is pinned by SHA-256, independently checked against Apache's published SHA-512 before adding the property. CI enables normal wrapper verbosity (not shell tracing). No test skip, database service, production environment, security rule or dependency version was changed.
+
+Two local bootstrap regressions use a disposable loopback server and a synthetic executable archive: two initial HTTP 503 responses must recover on the third request, and an incorrect checksum must prevent execution. They join the five publication checks. A separate fresh-cache real Maven download exercises the actual pinned archive and full PostgreSQL verification. Final local and hosted results for this correction are reported with its commit; earlier hosted execution remained unverified until this follow-up. This does not authorize website or backend deployment.
+
 ## November 22, 2026 checkpoint (historical)
 
 November 22, 2026. Baseline: `1322f44358d9961b0d1e84380646f05e2cdd399b`, branch `main`. **Local preparation only; nothing is publicly deployed.** The owner authorized a reviewed private Git commit and normal push with `feat(portfolio): finalize free Cloudflare showcase`. This authorizes Git publication only; no website deployment, account, purchase, DNS change, image publication or infrastructure provisioning is authorized or claimed.

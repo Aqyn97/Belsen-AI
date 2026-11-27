@@ -79,6 +79,8 @@ jobs:
       - name: Require Docker for real PostgreSQL tests
         run: docker info
       - name: Verify and package with Maven Wrapper
+        env:
+          MVNW_VERBOSE: 'true'
         run: ./backend/mvnw -B -ntp -f backend/pom.xml -Pspa clean verify
       - name: Confirm generated output stays untracked
         run: git diff --exit-code
