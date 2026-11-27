@@ -1,8 +1,20 @@
 # Public source privacy and security review
 
-Reviewed locally on November 22, 2026 at baseline `1322f44358d9961b0d1e84380646f05e2cdd399b`, plus the reviewed portfolio preparation. **The repository stays private; no visibility change is authorized.** The static showcase may remain independent of source publication; its GitHub/documentation links are hidden by default.
+## Current public-source status — November 27, 2026
 
-The configured URL remains `https://github.com/Aqyn97/Belsen-AI`. Anonymous HTTP and connected GitHub API checks returned 404. This does not prove whether the repository is private, missing or unavailable to those clients. No alternate URL, permission change, remote write or public image publication was substituted.
+GitHub's repository API now reports `private=false`, `visibility=public` for `Aqyn97/Belsen-AI`. Remote `main`, checked through both the API and Git, matches the clean starting checkout `62d2ad81a385064148b756a9b99d187159b35612`. No visibility or permission setting was changed by this review. The prior November 22 clients returned 404; that historical observation no longer describes current access.
+
+**Public access is already possible, but showcase source links still require a separate owner privacy decision.** Keep `BELSEN_SOURCE_PUBLIC` unset. The owner previously accepted the low-risk historical workstation-path disclosure and prohibited history rewriting; this review preserves both decisions. No application launch link or verified public application URL exists.
+
+The fresh local pass inspected all **270 tracked paths**, **18 reachable commits** and **451 distinct committed blobs**, using actual commit roots rather than tree-only review refs. Recognized token/private-key/credential-URL/dump/artifact checks found no confirmed secret. Home-path matches remain confined to the previously documented historical versions of `docs/AI_COACH_DESIGN.md`; current references remain portable. Contributor email domains are GitHub noreply addresses. Both unchanged screenshots retain fictional fixture data and no text/EXIF chunks. New working files receive the same scoped publication guard before release.
+
+The now-accessible GitHub API listed one branch (`main`), zero Actions runs, zero releases and zero pull requests. The repository reports zero open issues. No new public artifact exposure was identified through those endpoints. This is not a review of every closed issue, comment, server-retained object or future upload. No repository-side security setting was changed.
+
+**New public-source risk assessment:** no new confirmed credential or private dataset finding. Public readers can already inspect the accepted historical username/path, ordinary contributor identity, deliberately generic private-network layouts, operational role names and secret-file paths. These are architecture templates, not deployed addresses or secret values. The owner must separately approve promoting these public source links; a successful HTTP response is not privacy approval. No history rewrite is proposed or performed.
+
+## Prior audit — November 22, 2026
+
+The following records the original baseline review, when the owner instructed that the repository remain private. Current verified visibility is public as described above; no current PRIVATE or 404 claim should be inferred from that earlier decision. The configured repository remains `https://github.com/Aqyn97/Belsen-AI`.
 
 ## Scope and method
 
@@ -28,9 +40,9 @@ Checks cover recognizable provider tokens, embedded private keys, password-beari
 
 No other committed file containing a workstation-home path was found by the scoped baseline scan. No original path value is copied into this report.
 
-**Owner decision and completed remediation:** the documented historical disclosure is accepted. The two current references were replaced with `$HOME/.docker/run/docker.sock`, preserving the troubleshooting evidence without a workstation username. The historical commits listed above remain intact. The owner explicitly prohibited history rewriting and instructed that the repository remain private. No history rewrite, force-push, visibility change or credential rotation was performed. A filesystem-path disclosure alone is not evidence of a compromised credential.
+**Owner decision and completed remediation:** the documented historical disclosure is accepted. The two current references were replaced with `$HOME/.docker/run/docker.sock`, preserving the troubleshooting evidence without a workstation username. The historical commits listed above remain intact. The owner explicitly prohibited history rewriting and, at that time, instructed that the repository remain private. Current observed public visibility is recorded above. No history rewrite, force-push, visibility change or credential rotation was performed. A filesystem-path disclosure alone is not evidence of a compromised credential.
 
-This resolves the identified low-risk disclosure for this private Git release. It does not authorize public source access: `BELSEN_SOURCE_PUBLIC` remains unset and the static showcase's GitHub links stay hidden.
+This completed the approved forward-only correction; historical disclosure remains accepted. It does not authorize promoting source links: `BELSEN_SOURCE_PUBLIC` remains unset and the static showcase's GitHub links stay hidden.
 
 ### Reviewed candidates without a confirmed secret finding
 
@@ -45,8 +57,8 @@ No confirmed provider credential, live password, embedded private key, database 
 
 ## Remaining limits and publication decision
 
-The connected repository was inaccessible, so remote-only branches/refs, issues, PR discussions, Actions logs/artifacts, release attachments and server-retained objects were not reviewed. Local unreachable/reflog objects are not normally transmitted by a standard branch push; they were inspected as additional local evidence without deleting or rewriting them. Ignored workstation secrets were not read or published. There was no external authenticated secret scan or complete container-OS vulnerability scan.
+At the prior audit, the connected repository was inaccessible, so remote-only branches/refs, issues, PR discussions, Actions logs/artifacts, release attachments and server-retained objects were not reviewed. The limited fresh endpoint inventory above supersedes that access blocker, not the limits on a complete server-side audit. Local unreachable/reflog objects are not normally transmitted by a standard branch push; they were inspected as additional local evidence without deleting or rewriting them. Ignored workstation secrets were not read or published. There was no external authenticated secret scan or complete container-OS vulnerability scan.
 
-**Current disposition:** the owner accepted the historical workstation-path disclosure, and current references are portable. No confirmed secret finding blocks the reviewed private Git commit. The repository remains private by explicit owner instruction. Any future public-visibility proposal requires separate authorization and review of the intended remote publication scope and repository-side artifacts/settings. Any genuine credential discovered later would require revocation/rotation; none was confirmed here.
+**Current disposition:** the owner accepted the historical workstation-path disclosure, and current references are portable. No confirmed secret finding was identified in the inspected scope. GitHub now reports public visibility; the agent has not changed it. A separate privacy decision is still required before enabling showcase source links. Repository-side artifacts/settings and future changes require continued review. Any genuine credential discovered later would require revocation/rotation; none was confirmed here.
 
 Do not turn on `BELSEN_SOURCE_PUBLIC` merely because a URL returns 200. It requires both the privacy decision and actual public access. No authentication/session shortcut, shared demonstration password or source-visibility change is needed for the current Cloudflare showcase release.

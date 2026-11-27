@@ -31,7 +31,9 @@ const out = path.join(root, 'dist');
 await rm(out, { recursive: true, force: true });
 await mkdir(out);
 for (const file of ['styles.css', '404.html', '_headers']) await cp(path.join(root, file), path.join(out, file));
-await cp(path.join(root, 'assets'), path.join(out, 'assets'), { recursive: true });
+await mkdir(path.join(out, 'assets'));
+for (const file of ['dashboard.png', 'analytics.png'])
+  await cp(path.join(root, 'assets', file), path.join(out, 'assets', file));
 const template = await readFile(path.join(root, 'index.html'), 'utf8');
 const replacements = {
   LAUNCH: launch, APP_STATUS: status,
@@ -40,7 +42,7 @@ const replacements = {
   SOURCE_ARCH: sourcePublic ? `<a class="text-link" href="${repository}/blob/main/docs/ARCHITECTURE.md">Read the architecture ↗</a>` : '<a class="text-link" href="#engineering">Review the engineering</a>',
   SOURCE_CLOSING: sourcePublic ? `<a class="button" href="${repository}">View Belsen-AI on GitHub ↗</a>` : '<a class="button" href="#product">Explore the product</a>',
   SOURCE_FOOTER: sourcePublic ? `<a href="${repository}/blob/main/docs/FREE_HOSTING.md">Hosting status &amp; limitations ↗</a>` : '<a href="#release-status">Release status</a>',
-  SOURCE_STATUS: sourcePublic ? 'Public source access has been approved for this build.' : 'Public source access is not enabled. The repository remains private.',
+  SOURCE_STATUS: sourcePublic ? 'Public source access has been approved for this build.' : 'Source links are not enabled for this showcase release.',
 };
 let html = template;
 for (const [key, value] of Object.entries(replacements)) html = html.replace(`<!-- ${key} -->`, value);

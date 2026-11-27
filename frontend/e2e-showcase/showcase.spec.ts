@@ -8,7 +8,7 @@ test('static showcase is accessible, responsive and independent of the applicati
   await expect(page.getByText('Interactive app not deployed',{exact:true})).toBeVisible();
   await expect(page.getByRole('link',{name:/Launch application/})).toHaveCount(0);
   await expect(page.locator('a[href*="github.com"]')).toHaveCount(0);
-  await expect(page.getByText('Public source access is not enabled.',{exact:false})).toBeVisible();
+  await expect(page.getByText('Source links are not enabled for this showcase release.',{exact:false})).toBeVisible();
   await expect(page.getByRole('heading',{name:'AI Coach, grounded in evidence'})).toBeVisible();
   for (const image of await page.getByRole('img').all()) {
     await image.scrollIntoViewIfNeeded(); await expect(image).toHaveJSProperty('naturalWidth',1280);
@@ -37,5 +37,26 @@ test('unknown routes and API paths remain explicit 404 pages', async ({request})
   for (const route of ['/unknown','/api/v1/me','/.env','/app/goals']) {
     const response = await request.get(route); expect(response.status()).toBe(404);
     expect(await response.text()).toContain('That page');
+  }
+});
+
+test('every public link resolves locally and restrictive headers are present', async ({page, request}) => {
+  await page.goto('/');
+  for (const href of await page.locator('a[href]').evaluateAll(links => links.map(link => link.getAttribute('href')!))) {
+    if (href.startsWith('#')) {
+      expect(await page.locator(href).count()).toBe(1);
+    } else {
+      expect(href.startsWith('/')).toBe(true);
+      expect((await request.get(href)).status()).toBe(200);
+    }
+  }
+  for (const route of ['/', '/styles.css', '/assets/dashboard.png', '/assets/analytics.png', '/unknown']) {
+    const headers = (await request.get(route)).headers();
+    expect(headers['content-security-policy']).toContain("script-src 'none'");
+    expect(headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    expect(headers['x-content-type-options']).toBe('nosniff');
+    expect(headers['referrer-policy']).toBe('no-referrer');
+    expect(headers['x-frame-options']).toBe('DENY');
+    expect(headers['strict-transport-security']).toContain('max-age=31536000');
   }
 });

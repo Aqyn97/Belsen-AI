@@ -2,6 +2,8 @@
 
 **Plan better. Stay consistent. Grow.**
 
+Java backend portfolio · Java 21 / Spring Boot / PostgreSQL / React
+
 Belsen-AI helps people turn measurable goals into daily tasks and routines, then review what they actually accomplished. This personal portfolio project emphasizes Java backend engineering: ownership, concurrent writes, auditable history and trustworthy reporting.
 
 | Public destination | Current status |
@@ -9,9 +11,11 @@ Belsen-AI helps people turn measurable goals into daily tasks and routines, then
 | Portfolio | Not deployed · future `https://<project>.pages.dev` |
 | Interactive application | Not deployed · Oracle ARM proposed; no verified public URL |
 
-[![Genuine Belsen-AI dashboard with fictional local test data](showcase/assets/dashboard.png)](showcase/assets/dashboard.png)
+| Daily workspace | Historical analytics |
+| --- | --- |
+| [![Genuine Belsen-AI dashboard](showcase/assets/dashboard.png)](showcase/assets/dashboard.png) | [![Genuine Belsen-AI analytics](showcase/assets/analytics.png)](showcase/assets/analytics.png) |
 
-*Actual production-JAR interface captured against local HTTPS and PostgreSQL. Fictional test data, not a live deployment or user statistics. [Analytics capture](showcase/assets/analytics.png) · [screenshot provenance](showcase/README.md#screenshot-provenance).*
+*Actual React interface captured against real Java/PostgreSQL backends; the dashboard capture uses the production JAR and local HTTPS. Fictional test data, not a live deployment or user statistics. [Analytics capture](showcase/assets/analytics.png) · [screenshot provenance](showcase/README.md#screenshot-provenance).*
 
 ## What works
 
@@ -25,17 +29,19 @@ Belsen-AI helps people turn measurable goals into daily tasks and routines, then
 | AI Coach | Explicit evidence preview and optional Groq ranking of Java-defined actions; disabled by default |
 | Production packaging | React and REST in one Spring Boot JAR; HTTPS configuration and non-root runtime image |
 
-**Free portfolio preparation:** the independent static showcase targets Cloudflare Pages Free. Oracle Always Free ARM is the proposed full Java/React/PostgreSQL route, subject to account/card verification, capacity and public HTTPS. Render Free is **not approved for production**; its experiment is retained separately. [Manual publication and hosting options](docs/FREE_HOSTING.md) · [local verification](docs/FREE_HOSTING_VERIFICATION.md).
+**Free portfolio preparation:** the independent static showcase targets Cloudflare Pages Free, with [Git integration settings](docs/FREE_HOSTING.md#cloudflare-pages-git-settings). Oracle Always Free ARM is the proposed full Java/React/PostgreSQL route, subject to account/card verification, capacity and public HTTPS. Render Free is **not approved for production**; its experiment is retained separately. [Manual publication and hosting options](docs/FREE_HOSTING.md) · [local verification](docs/FREE_HOSTING_VERIFICATION.md).
 
 **Existing VPS alternative:** a dedicated Hetzner/Caddy/PostgreSQL topology and encrypted backup tooling are prepared; see the [runbook](docs/DEPLOYMENT.md#hetzner-controlled-portfolio-preview). Production self-registration defaults off; approved individual accounts use an offline operator procedure. Local development explicitly permits signup.
 
-**Not publicly deployed.** Live Google login and live Groq inference remain unverified. Immutable report finalization, password recovery, email verification and CI automation are not implemented. Closed reports are explicitly **closed, not finalized**. No live URL, live-provider screenshot or user statistics are claimed. The configured GitHub source URL currently returns 404 to verification clients; public links are hidden in the showcase. [Tracked-file/history audit](docs/PUBLIC_SOURCE_AUDIT.md) records the accepted historical disclosure and portable current references. The repository stays private. The static site can be published independently.
+**Release status:** the Java application and static showcase are not publicly deployed; no verified portfolio URL exists yet. GitHub reports the repository as **public**, verified November 27, 2026. Showcase source links remain hidden pending a separate privacy approval; the application launch link remains absent. The [tracked-file/history audit](docs/PUBLIC_SOURCE_AUDIT.md) records the accepted historical workstation-path disclosure and the current public-source review.
+
+**Known limitations:** live Google login and live Groq inference remain unverified. Immutable report finalization, password recovery and email verification are not implemented. Closed reports are explicitly **closed, not finalized**. Login throttling is bounded to one application instance and resets on restart. No production uptime or complete accessibility certification is claimed.
 
 ## Engineering choices
 
 Java 21 · Spring Boot 4.1.2 · Spring Security · Maven Wrapper 3.9.12 · PostgreSQL 17 · Flyway · React 19 · TypeScript · Vite · TanStack Query · Playwright.
 
-The backend is a modular monolith organized by feature. PostgreSQL enforces ownership relationships, uniqueness and append-only history. Flyway owns schema changes; Hibernate validates it. Account-first locks coordinate writes, while dashboard reads use one read-only REPEATABLE READ snapshot.
+The backend is a modular monolith organized by feature. PostgreSQL enforces ownership relationships, uniqueness and append-only history. Seven versioned Flyway migrations own schema changes; Hibernate validates the mappings. PostgreSQL Testcontainers verify the actual schema, constraints and transactions rather than an H2 approximation. Account-first locks coordinate writes, while dashboard reads use one read-only REPEATABLE READ snapshot.
 
 - Task completion uses the **original due-week cohort** and completion state at the cutoff. Rescheduling or archive cannot erase an obligation.
 - Habit consistency counts successful days. **Every non-rest scheduled habit must be complete** for a day to succeed.
@@ -44,6 +50,19 @@ The backend is a modular monolith organized by feature. PostgreSQL enforces owne
 The browser uses same-origin JDBC sessions and CSRF protection. Production cookies are Secure, HttpOnly and SameSite=Lax. Private resources are owner-scoped; stale mutations conflict instead of silently overwriting changes. The production SPA has an explicit route allowlist, HTTPS enforcement, security headers and no wildcard fallback for APIs or private files.
 
 The optional Coach sends bounded numerical evidence and anonymous candidate IDs. The model selects IDs; Java owns metrics, action text and destinations. It cannot change user data. There are no automatic retries, paid fallback or page-load inference. Replay lasts 24 hours with 32-day idempotency tombstones; uncertain outcomes fail closed and retain capacity.
+
+## Verification evidence and CI
+
+| Layer | Local verification evidence |
+| --- | --- |
+| Java / PostgreSQL | Fresh: 307 tests, 92 unit and 215 integration |
+| React | Fresh: 267 unit/component tests |
+| Application Chromium | Reused: 52 cases across mocked, real PostgreSQL and packaged HTTPS suites |
+| Standalone showcase | Fresh: 8 build tests; 8 desktop/mobile Chromium cases, including axe scans |
+
+Fresh checks were completed November 27, 2026; application browser evidence is retained from the preceding release. These are local results, not a claim that GitHub Actions has already run. See [dated verification and limitations](docs/FREE_HOSTING_VERIFICATION.md) for fresh checks versus reused results. Mock OIDC and provider fixtures do not establish live Google or Groq behavior.
+
+[The CI workflow](.github/workflows/ci.yml) prepares Node 24 showcase checks, frontend typecheck/lint/tests/build, desktop/mobile accessibility checks and Java 21 Maven verification against PostgreSQL Testcontainers on standard Ubuntu runners. It has read-only repository permission, pinned actions, no deployment step and no provider credentials. A focused publication guard checks recognized secret patterns and generated paths; it does not replace manual privacy review. Hosted results remain pending publication and execution of the workflow.
 
 ## Local backend setup
 

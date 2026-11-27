@@ -1,8 +1,46 @@
 # Portfolio release preparation — verification record
 
+## November 27, 2026 follow-up
+
+Starting checkout and verified remote `main`: `62d2ad81a385064148b756a9b99d187159b35612`, initially clean. GitHub now confirms PUBLIC visibility. The earlier PRIVATE/404 statements below describe the November 22 checkpoint only and are superseded by this finding. No visibility change is performed. Both public source links and the application launch link remain hidden pending their separate approvals.
+
+A read-only GitHub Actions workflow is prepared locally, not yet committed or run on GitHub. Fresh local verification for this follow-up is recorded below; prior application-browser and hosting measurements remain reused evidence. No Render or Oracle experiment is repeated.
+
+### Fresh local results
+
+Node **24.22.1**, Java **21.0.11**. All completed on November 27, 2026:
+
+| Check | Result |
+| --- | --- |
+| Static build | Passed, six approved files, **404,397 bytes**; no app/source flags enabled |
+| Node build regression tests | **8 passed**, zero failures |
+| Showcase Chromium | **8 passed**, desktop/mobile; real generated static bundle |
+| Accessibility | Zero axe violations for scanned WCAG A/AA rules; keyboard and responsive checks passed |
+| Links, images and headers | Local anchors/assets resolve; restrictive headers and explicit 404 responses verified |
+| Visual review | Original PNGs and fresh desktop/mobile captures inspected; fictional fixtures only |
+| Frontend | Typecheck, ESLint, production build and **267 tests** passed |
+| Maven production packaging | **307 passed**: 92 unit + 215 PostgreSQL integration; zero failures/errors/skips |
+| JAR inspection | Seven migrations and React index present; local config/test launchers absent |
+| npm advisories | Both full and runtime-only audits report zero vulnerabilities |
+| Publication guard | **5 regression tests** passed; current tracked/unignored files passed recognized secret/dump/artifact checks |
+| Workflow validation | YAML parsed; official **actionlint 1.7.12** passed, temporary binary SHA-256 verified and removed |
+| Privacy/history | 270 starting tracked paths, 18 reachable commits, 451 committed blobs; no new confirmed secret finding |
+
+The first temporary actionlint download attempt failed because Python's separate TLS store lacked the issuer. Retrying with macOS curl's verified trust store succeeded; certificate verification was never disabled. No project dependency was installed for this check.
+
+The new workflow has not run on GitHub: it remains uncommitted. Standard `ubuntu-24.04` runners are selected; local command success does not establish a hosted runner result. The local static server reproduces Pages headers, but Cloudflare edge behavior and a public URL still require separately approved publication and post-publication checks. No live Google/Groq, Oracle/Render rehearsal or existing application Chromium suite was rerun; the earlier 52 application browser cases remain explicitly reused evidence.
+
+### Current changed scope and release gates
+
+**13 pending source/documentation paths**, all unstaged: README; architecture, decisions, hosting, verification and privacy docs; showcase README/builder/build tests; the showcase browser spec; one workflow; and two stdlib publication-guard files. No backend implementation, frontend application, dependency version, historical migration, paid infrastructure or screenshot asset changed. Generated static/frontend/JAR/test output remains ignored.
+
+No critical/high/medium issue was identified within this preparation. Remaining gates are owner review and separate Git publication approval, the first actual hosted CI run, separate website publication approval, and Cloudflare account/repository integration plus actual edge/URL verification. Source links require their own privacy decision and remain hidden; the application launch link stays absent. No public portfolio URL is fabricated. License selection remains an owner decision. No staging, commit, push, visibility change or deployment occurred.
+
+## November 22, 2026 checkpoint (historical)
+
 November 22, 2026. Baseline: `1322f44358d9961b0d1e84380646f05e2cdd399b`, branch `main`. **Local preparation only; nothing is publicly deployed.** The owner authorized a reviewed private Git commit and normal push with `feat(portfolio): finalize free Cloudflare showcase`. This authorizes Git publication only; no website deployment, account, purchase, DNS change, image publication or infrastructure provisioning is authorized or claimed.
 
-## Current decisions
+## Decisions at that checkpoint
 
 Cloudflare Pages Free is the standalone public portfolio target. Oracle Always Free ARM is a conditional full-stack proposal. Hetzner remains the unchanged optional paid route. Render Free is **not approved for production**; its experiment is preserved without further tuning or testing in this package.
 
@@ -10,7 +48,7 @@ The configured repository remains `https://github.com/Aqyn97/Belsen-AI`. It retu
 
 ## Focused checks and evidence freshness
 
-Final release checks used Node 24.22.1: the six-file static build and all seven build tests passed. The focused desktop/mobile Chromium suite was rerun: all six tests passed, including axe checks with zero reported violations, responsive widths, hidden links, screenshot loading and explicit 404 behavior. Frontend typecheck and ESLint also passed again. The approved forward-only correction replaces the two current workstation paths; the owner accepts the historical disclosure and keeps the repository private. No application behavior changed, so the completed application regression and ARM compatibility evidence below was reused rather than described as fresh.
+Final release checks used Node 24.22.1: the six-file static build and all seven build tests passed. The focused desktop/mobile Chromium suite was rerun: all six tests passed, including axe checks with zero reported violations, responsive widths, hidden links, screenshot loading and explicit 404 behavior. Frontend typecheck and ESLint also passed again. The approved forward-only correction replaces the two current workstation paths; the owner accepts the historical disclosure and then instructed that the repository remain private. No application behavior changed, so the completed application regression and ARM compatibility evidence below was reused rather than described as fresh.
 
 ### Completed checks
 
@@ -63,7 +101,7 @@ The old Render profile's passing 1 CPU / 512 MiB rehearsal took 42.7 seconds col
 
 [PUBLIC_SOURCE_AUDIT.md](PUBLIC_SOURCE_AUDIT.md) records the review of 243 baseline tracked paths, 17 baseline reachable commits, 418 distinct committed blobs, 77 additional unreachable local blobs, local review snapshots, the 33 reviewed release paths and commit metadata/messages. No confirmed real token, password, embedded private key or database dump was found. Literal candidates were reviewed as fixtures/autocomplete labels; author contacts use GitHub noreply addresses. Intentional infrastructure templates expose private topology/settings and secret paths, not actual cloud secrets or live public addresses.
 
-**Accepted low historical disclosure:** the two workstation paths formerly at `docs/AI_COACH_DESIGN.md:280` and `:356` remain in the five historical commits enumerated in the audit. The owner explicitly accepted that risk and approved replacing both current references with `$HOME/.docker/run/docker.sock`. This forward-only documentation correction is included in this release; no history rewrite or visibility change is permitted. The repository stays private and both public GitHub links and the application launch link remain hidden. Remote-only GitHub content was inaccessible and is outside the local audit.
+**Accepted low historical disclosure:** the two workstation paths formerly at `docs/AI_COACH_DESIGN.md:280` and `:356` remain in the five historical commits enumerated in the audit. The owner explicitly accepted that risk and approved replacing both current references with `$HOME/.docker/run/docker.sock`. This forward-only documentation correction is included in this release; no history rewrite or visibility change is permitted. At that checkpoint the owner requested private visibility, and both public GitHub links and the application launch link remain hidden. Remote-only GitHub content was inaccessible and is outside the local audit.
 
 Oracle remains conditional on owner acceptance of card/identity verification, actual Always Free A1 availability, aggregate account allowances, public IPv4 eligibility, an approved free/existing HTTPS hostname, secure host/cloud firewall configuration and independent operational recovery. Idle reclamation remains a real risk. None was provisioned or claimed tested. [Manual steps](ORACLE_ARM.md) make those gates explicit. The [Pages publication steps](FREE_HOSTING.md#exact-manual-pages-publication-steps--not-executed) require separate owner approval; no cloud action is automated.
 

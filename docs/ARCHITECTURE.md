@@ -182,7 +182,7 @@ The provider has no tools or write access. Keep keys server-side. Provider timeo
 - Frontend tests: forms, API errors, loading/empty states, accessibility and verified-metric/coaching separation.
 - End-to-end tests: account flow, goal progress, task reschedule/reopen, habit rest days and stable closed-week results. Exercise Google configuration manually in a controlled smoke test rather than relying on a live provider in ordinary CI.
 
-Future GitHub Actions gates: Maven verification, frontend type checking, linting, tests and production build. Prioritize meaningful edge cases over an arbitrary coverage target. Backend verification exists, including Stage C authentication, cookie and mock OIDC tests; the Stage B baseline passed 20 tests. Frontend and CI checks remain planned.
+The prepared `.github/workflows/ci.yml` uses read-only permissions and pinned actions on standard Ubuntu runners: Node 24 showcase checks, frontend typecheck/lint/tests/build, Chromium/axe and Java 21 Maven `-Pspa clean verify` with PostgreSQL Testcontainers. React assets are built before Maven packaging. No live provider, production secret, artifact upload or deployment is required. Hosted results remain pending workflow publication/execution. Prioritize meaningful edge cases over an arbitrary coverage target. See FREE_HOSTING_VERIFICATION.md for dated local versus hosted evidence.
 
 ## Migration and deployment
 
@@ -198,7 +198,7 @@ Register exact local and production OAuth callbacks, with the production callbac
 
 ## Planned repository layout
 
-Day 1 created ten documentation/configuration files. Backend and Compose now exist; frontend and CI paths below remain a future implementation plan.
+Day 1 created ten documentation/configuration files. Backend, frontend and Compose exist; the workflow below is prepared locally. This layout is illustrative; hosted CI execution remains unverified.
 
 ```text
 backend/
@@ -513,3 +513,8 @@ The standalone `showcase/` is the selected Cloudflare Pages Free publication tar
 Oracle Always Free ARM is a proposed full-stack route using the existing Java/React image, PostgreSQL 17 and Caddy on one VM. A separate Compose override selects ARM64, project/resources and exact private proxy peers while reusing the unchanged paid Hetzner base. All authenticated traffic stays on the application's one HTTPS origin; session, CSRF, ownership, history and migration behavior are preserved. Local native ARM compatibility passes; actual Oracle eligibility, stock, card verification, IP/HTTPS and reclamation/backup operations remain external gates.
 
 Render/Neon configuration is an opt-in, unvalidated archive, not approved for production. Its failure and narrow memory headroom remain documented rather than hidden. It is not enabled by the Oracle or Hetzner model. No new schema, infrastructure, provider activation or public deployment is implied. See [hosting options](FREE_HOSTING.md), [Oracle preparation](ORACLE_ARM.md), [Render archive](RENDER_EXPERIMENT.md) and [verification](FREE_HOSTING_VERIFICATION.md).
+
+
+## Static release and CI preparation — November 27, 2026
+
+The repository API confirms public source visibility; showcase source links remain independently gated by owner privacy approval. No visibility setting is changed. Cloudflare Pages Git integration is prepared from the repository root with Node 24, dependency installation skipped, `node showcase/build.mjs` and output `showcase/dist`. The builder copies exactly two reviewed screenshots plus HTML/CSS/404/headers. The application/source flags remain unset. Connecting a Pages project would trigger deployment and requires separate approval; it is not performed here. CI verifies the application but does not deploy it or gate Cloudflare automatically.

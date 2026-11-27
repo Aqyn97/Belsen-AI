@@ -1,6 +1,6 @@
 # Architecture decisions
 
-The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Subsequent decisions record implemented goals, tasks, habits and the dashboard API; immutable report finalization, product frontend workflows and coaching remain planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
+The owner approved the architecture with refinements on October 31, 2026. The decisions describe the intended design. Stage B implements the backend foundation; Stage C adds authentication and profiles. Subsequent decisions record implemented goals, tasks, habits and the dashboard API; React product workflows and optional disabled Coach ranking are implemented; immutable report finalization and public application deployment remain planned, and live Google login is unverified. Detailed rules are in `ARCHITECTURE.md`.
 
 ## D01: modular monolith with feature packages
 
@@ -210,3 +210,12 @@ Select the dependency-free static showcase on Cloudflare Pages Free as the first
 Prepare Oracle Always Free ARM as a separate proposal: one A1 VM with 2 OCPUs and sufficient RAM, the existing Java/React ARM64 image, PostgreSQL 17 and Caddy. Reuse the unchanged Hetzner base through an ARM-specific Compose override, with a separate project/subnet and immutable image identities. Preserve secret files, private app/database ports, exact proxy trust and the normal production profile; do not import the experimental Render settings.
 
 Local ARM build/startup, migrations, authentication/CSRF, backup/restore and restart are evidence of compatibility, not Oracle stock, cloud performance or availability. Oracle card verification, eligibility, idle reclamation, storage, public IP/HTTPS and independent recovery remain explicit gates. No resource creation, account, purchase, DNS change or website deployment is authorized here. The owner separately authorized the reviewed private Git commit and normal push, without changing visibility or history. The optional paid Hetzner route remains unchanged. See FREE_HOSTING.md, ORACLE_ARM.md and FREE_HOSTING_VERIFICATION.md.
+
+
+## D25: public-source status, static Git delivery and read-only CI
+
+Verified November 27, 2026: GitHub reports PUBLIC visibility at `62d2ad81a385064148b756a9b99d187159b35612`. Preserve the owner-accepted historical workstation-path disclosure and forward-only portable references; do not rewrite history or change visibility. Source visibility and permission to advertise source links are separate: the showcase keeps `BELSEN_SOURCE_PUBLIC` unset pending a separate privacy decision. No application launch destination is approved.
+
+Prepare Cloudflare Pages Free Git integration with Node 24, repository-root build `node showcase/build.mjs` and output `showcase/dist`. Skip dependency installation because the static page uses Node core only. Connecting the repository or saving its first deployment requires separate approval. Git integration can publish future main pushes independently of CI; owner release controls must account for that.
+
+Use minimal read-only GitHub Actions jobs on standard Ubuntu runners: static/React checks and Java 21 verification with real PostgreSQL Testcontainers. Pin action commits, avoid persisted Git credentials, provider secrets, paid runners, build artifact uploads and deployment steps. The focused stdlib publication guard recognizes common secret/dump signatures and generated paths but does not replace historical/manual privacy review or specialist monitoring. No hosted CI pass is claimed until the new workflow actually runs.
